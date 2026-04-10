@@ -542,7 +542,7 @@ end
 
 function kailex:createFrame(title, buttontxt)
 	pcall(function() if not game:IsLoaded() then game.Loaded:Wait() end end)
-	task.wait(1.5)
+	task.wait(0.5)
 
 	local LibraryConnections = {}
 	local function Track(c) table.insert(LibraryConnections, c) return c end
