@@ -31,7 +31,7 @@ local Tab = Window:addTab("Main Features", "6031090994")
 -- 4. Add Components
 Tab:addToggle("Auto Farm", "Enable automatic farming", function(state)
     print("Auto Farm is now: ", state)
-end, false)
+end)
 
 Tab:addButton("Print Hello", "Prints hello to console", function()
     print("Hello World!")
