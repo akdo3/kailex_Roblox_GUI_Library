@@ -1155,7 +1155,7 @@ function kailex:createFrame(title, buttontxt)
 		end)
 	end
 
-	function kailex:ShowNotification(txt)
+	function kailex:Notification(txt)
 		table.insert(NotificationQueue, txt)
 		ProcessNotification()
 	end
