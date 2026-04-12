@@ -1539,12 +1539,14 @@ function kailex:createFrame(title, buttontxt)
 					PlayTween(textBox, TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextColor3 = Theme.Toggle.ToggleOnColor})
 
 					local v = GetVal(input.Position.X)
-					UpdateVisuals(v); callback(v)
+					UpdateVisuals(v)
+					callback(v)
 
 					moveConn = Track(UserInputService.InputChanged:Connect(function(changedInput) 
 						if dragging and (changedInput.UserInputType == Enum.UserInputType.MouseMovement or changedInput.UserInputType == Enum.UserInputType.Touch) then 
 							local cv = GetVal(changedInput.Position.X)
-							UpdateVisuals(cv); callback(cv) 
+							UpdateVisuals(cv)
+							callback(cv) 
 						end 
 					end))
 
