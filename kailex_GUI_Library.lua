@@ -62,7 +62,7 @@ local SafeParent = (function()
 	return game:GetService("CoreGui")
 end)()
 
-function GenerateRandomName(length)
+local function GenerateRandomName(length)
 	local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	local name = ""
 	for _ = 1, length or random(8, 16) do
@@ -72,7 +72,7 @@ function GenerateRandomName(length)
 	return name
 end
 
-function Create(class, props)
+local function Create(class, props)
 	local inst = inst_new(class)
 	inst.Name = GenerateRandomName()
 
@@ -102,7 +102,7 @@ function Create(class, props)
 	return inst
 end
 
-function PlayTween(inst, info, props, cb)
+local function PlayTween(inst, info, props, cb)
 	if not inst or not inst.Parent then return end
 	local t = TweenService:Create(inst, info, props)
 	t:Play()
@@ -133,7 +133,7 @@ function PlayTween(inst, info, props, cb)
 	return t
 end
 
-kailex = {
+local kailex = {
 	Setting = {
 		Layout = {
 			ButtonSizeY = 28,
@@ -264,7 +264,7 @@ end
 
 local CachedSound = Create("Sound", {Parent = SoundService})
 
-function PlayInteractSound(audioType)
+local function PlayInteractSound(audioType)
 	if kailex.Setting.Sounds then
 		CachedSound.SoundId = kailex.Setting.Audio[audioType] or kailex.Setting.Audio.Click
 		SoundService:PlayLocalSound(CachedSound)
@@ -274,7 +274,7 @@ end
 local ripplePool = {}
 local rippleCount = 0
 
-function GetRipple()
+local function GetRipple()
 	for i = 1, rippleCount do
 		local r = ripplePool[i]
 		if not r.Visible then
@@ -297,7 +297,7 @@ function GetRipple()
 	return r
 end
 
-function ApplyRipple(tgt)
+local function ApplyRipple(tgt)
 	if not tgt or not tgt.Parent then return end
 	local s = pcall(function() return tgt.Parent end)
 	if not s then return end
@@ -360,7 +360,7 @@ hoverTweenInfo = ti_new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
 scaleTweenInfo = ti_new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 GlobalDragState = false
 
-function ApplyHover(hit, tgt, hCol, dCol)
+local function ApplyHover(hit, tgt, hCol, dCol)
 	local strk = tgt:FindFirstChildOfClass("UIStroke")
 
 	local originalThick = strk and strk.Thickness or 0
@@ -434,15 +434,15 @@ function ApplyHover(hit, tgt, hCol, dCol)
 	end
 end
 
-function GetCorner()
+local function GetCorner()
 	return Create("UICorner", {CornerRadius = Layout.ElementCorner})
 end
 
-function GetStroke(trans, applyMode)
+local function GetStroke(trans, applyMode)
 	return Create("UIStroke", {Thickness = 1.5, Color = Theme.BorderColor, Transparency = trans or 0.6, ApplyStrokeMode = applyMode or Enum.ApplyStrokeMode.Contextual})
 end
 
-function GetAdaptiveSize(scaleX, scaleY)
+local function GetAdaptiveSize(scaleX, scaleY)
 	local viewport = workspace.CurrentCamera.ViewportSize
 	local isMobile = viewport.X < 800
 	return UDim2.new(
@@ -451,7 +451,7 @@ function GetAdaptiveSize(scaleX, scaleY)
 	)
 end
 
-function ApplyShadow(target, intensity, size)
+local function ApplyShadow(target, intensity, size)
 	local shadow = Create("ImageLabel", {
 		Name = "DropShadow",
 		BackgroundTransparency = 1,
@@ -469,7 +469,7 @@ function ApplyShadow(target, intensity, size)
 	return shadow
 end
 
-function CreateBaseComp(parent)
+local function CreateBaseComp(parent)
 	return Create("Frame", {
 		Size = Layout.ButtonSize,
 		BackgroundColor3 = Theme.ButtonColor,
@@ -483,7 +483,7 @@ function CreateBaseComp(parent)
 	})
 end
 
-function CreateLabeledBase(parent, name, sizeX)
+local function CreateLabeledBase(parent, name, sizeX)
 	local baseFrame = CreateBaseComp(parent)
 	local btn = Create("TextButton", {
 		Size = U2s(sizeX or 0.813, 1),
@@ -501,7 +501,7 @@ function CreateLabeledBase(parent, name, sizeX)
 	return baseFrame, btn
 end
 
-function MakeDraggable(el, tgt)
+local function MakeDraggable(el, tgt)
 	local dragging = false
 	local dragInput, mousePos, framePos
 
