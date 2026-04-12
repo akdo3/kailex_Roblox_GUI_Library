@@ -19,8 +19,8 @@ A sleek, modern, highly customizable, and animated UI library for Roblox. Kailex
 Want to get your script running in under a minute? Copy and paste this code:
 
 ```lua
--- 1. Load the Library (Replace URL with your raw file link)
-local kailex = loadstring(game:HttpGet("YOUR_RAW_URL_HERE"))()
+-- 1. Load the Library
+local kailex = loadstring(game:HttpGet("https://raw.githubusercontent.com/akdo3/kailex_Roblox_GUI_Library/refs/heads/main/kailex_GUI_Library.lua"))()
 
 -- 2. Create Window (Title, Minimized Button Text)
 local Window = kailex:createFrame("Kailex Hub", "Kailex")
