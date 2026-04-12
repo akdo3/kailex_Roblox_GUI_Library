@@ -1749,7 +1749,7 @@ function kailex:createFrame(title, buttontxt)
 			local args = {...}
 			local info = Setting.Info and args[1] or nil
 			local callback = Setting.Info and args[2] or args[1]
-			callback = type(callback) == "function" and callback or function() end
+			callback = callback or function() end
 			local startIndex = Setting.Info and 3 or 2
 			local rightIcon = (args[startIndex] ~= nil and type(args[startIndex + 1]) ~= "function") and args[startIndex] or nil
 			if rightIcon then startIndex = startIndex + 1 end
@@ -1817,7 +1817,7 @@ function kailex:createFrame(title, buttontxt)
 		function compTable:addToggle(name, ...)
 			local Info, callback, defaultVal, style = getArgs(...)
 			local api = {}
-			local callback = type(callback) == "function" and callback or function() end
+			local callback = callback or function() end
 
 			local baseFrame, btn = CreateLabeledBase(parent, name, U2n(1, -60, 1, 0))
 			local tApi, tBtn, doToggle = SetupToggle(baseFrame, defaultVal, style)
@@ -1864,7 +1864,7 @@ function kailex:createFrame(title, buttontxt)
 			local perRow = perRow or 1
 			local expanded = false
 			local selectedItems = {}
-			local callback = type(callback) == "function" and callback or function() end
+			local callback = callback or function() end
 
 			if type(defaultVals) == "table" then
 				for _, val in ipairs(defaultVals) do
@@ -2180,7 +2180,7 @@ function kailex:createFrame(title, buttontxt)
 		function compTable:addTextBox(name, ...)
 			local info, placeholder, callback, defultvalue, live = getArgs(...)
 			local api = {}
-			local callback = type(callback) == "function" and callback or function() end
+			local callback = callback or function() end
 
 			local baseFrame, label = CreateLabeledBase(parent, name)
 
@@ -2228,7 +2228,7 @@ function kailex:createFrame(title, buttontxt)
 
 		function compTable:addColorPicker(name, ...)
 			local info, defColor, callback = getArgs(...)
-			local callback = type(callback) == "function" and callback or function() end
+			local callback = callback or function() end
 			local api = {}
 			defColor = typeof(defColor) == "Color3" and defColor or C3n(1, 1, 1)
 
@@ -2633,7 +2633,7 @@ function kailex:createFrame(title, buttontxt)
 		function compTable:addKeybind(name, ...)
 			local info, defBind, callback = getArgs(...)
 			local api = {}
-			local callback = type(callback) == "function" and callback or function() end
+			local callback = callback or function() end
 			local baseFrame = CreateBaseComp(parent) 
 			local currentBind = defBind or Enum.KeyCode.Unknown 
 			local isBinding = false
@@ -2710,6 +2710,7 @@ function kailex:createFrame(title, buttontxt)
 		function compTable:addSB(name, ...)
 			local Info, btnText, beginVal, min, max, callback = getArgs(...)
 			local currentSliderVal = beginVal or min
+			local callback = callback or function() end
 
 			local api, frame = CreateSlider(name, Info, beginVal, min, max, function(val)
 				currentSliderVal = val
@@ -2739,6 +2740,8 @@ function kailex:createFrame(title, buttontxt)
 
 		function compTable:addST(name, ...)
 			local info, beginVal, minVal, maxVal, callback, defaultToggle, style = getArgs(...)
+			local callback = callback or function() end
+			
 
 			local currentSliderVal = beginVal or minVal
 			local currentToggleVal = defaultToggle or false
@@ -2789,6 +2792,7 @@ function kailex:createFrame(title, buttontxt)
 			local expanded = false
 			local selectedItems = {}
 			local currentToggleVal = defaultToggle or false
+			local callback = callback or function() end
 
 			if type(defaultVals) == "table" then
 				for _, val in ipairs(defaultVals) do
