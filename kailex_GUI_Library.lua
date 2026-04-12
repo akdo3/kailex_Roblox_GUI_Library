@@ -1463,6 +1463,7 @@ function kailex:createFrame(title, buttontxt)
 		local function CreateSlider(name, info, beginVal, minVal, maxVal, callback, tSize, trackSize)
 			local api = {} 
 			local currentVal = beginVal
+			local callback = callback or function() end
 			local baseFrame = CreateBaseComp(parent)
 
 			local label = Create("TextLabel", {
@@ -1518,8 +1519,10 @@ function kailex:createFrame(title, buttontxt)
 
 				TweenService:Create(sliderFill, TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = U2s(fraction, 1)}):Play()
 
-				local isInt = (math.floor(minVal) == minVal) and (math.floor(maxVal) == maxVal)
+				local isSmallRange = (maxVal - minVal) <= 1
+				local isInt = (math.floor(minVal) == minVal) and (math.floor(maxVal) == maxVal) and not isSmallRange
 				local formattedVal = isInt and tostring(math.floor(v)) or string.format("%.2f", v):gsub("%.?0+$", "")
+
 				if formattedVal == "" then formattedVal = "0" end
 				if formattedVal ~= textBox.Text and not textBox:IsFocused() then textBox.Text = formattedVal end 
 				currentVal = v
