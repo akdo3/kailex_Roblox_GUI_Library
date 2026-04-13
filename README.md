@@ -24,7 +24,7 @@ Created by **AKDO**, Kailex UI is designed to provide scripters with a modern ae
 First, load the library and configure the global settings. 
 
 ```lua
-local kailex = loadstring(game:HttpGet("YOUR_RAW_URL_HERE"))()
+local kailex = loadstring(game:HttpGet("https://raw.githubusercontent.com/akdo3/kailex_Roblox_GUI_Library/refs/heads/main/kailex_GUI_Library.lua"))()
 
 -- [Global Settings]
 kailex.Setting.Sounds = true -- Enable/Disable click & hover sounds
