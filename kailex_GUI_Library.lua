@@ -149,7 +149,7 @@ local kailex = {
 			}
 		},
 		Theme = {
-			Transparency = 0.08,
+			Transparency = 0.1,
 			BackgroundColor = C3r(10, 10, 14),
 			TextColor = C3r(245, 245, 255),
 			BorderColor = C3r(45, 45, 60),
