@@ -166,6 +166,7 @@ local kailex = {
 		QuickWidgets = true
 	}
 }
+
 local Setting = kailex.Setting
 local Theme, Layout, Animation, Audio = Setting.Theme, Setting.Layout, Setting.Animation, Setting.Audio
 local TextSize, tTheme, InfoImage = Layout.TextSize, Theme.Toggle, Setting.Components.InfoImage
@@ -3606,7 +3607,10 @@ function kailex:createFrame(title, buttontxt)
 		})
 
 		local function setLine(hov)
-			PlayTween(line, SharedTweens.Fast, { Size = U2n(hov and 0.8 or 0, 0, 0, 2), BackgroundTransparency = hov and 0 or 1 })
+			PlayTween(line, SharedTweens.Fast, {
+				Size = U2n(hov and 0.8 or 0, 0, 0, 2),
+				BackgroundTransparency = hov and 0 or 1
+			})
 		end
 
 		local function setPress(dn)
@@ -3723,29 +3727,23 @@ function kailex:createFrame(title, buttontxt)
 	local function ApplySearchFilter()
 		local query = string.lower(SearchInputFrame.Text)
 		if not currentTab then return end
-		if not SearchCache[currentTab] or #SearchCache[currentTab] == 0 then UpdateSearchCache() end
-		local isEmpty = query == ""
-		local cache = SearchCache[currentTab]
 
-		task.spawn(function()
-			for i = 1, #cache do
-				local data = cache[i]
-				local el = data.element
-				if data.isSep then
-					if el.Visible ~= isEmpty then el.Visible = isEmpty end
-				else
-					local match = isEmpty or string.find(data.text, query, 1, true) ~= nil
-					if match and not el.Visible then
-						el.Visible = true
-						el.Size = data.origSize
-					elseif not match and el.Visible then
-						el.Visible = false
-						el.Size = U2n(data.origSize.X.Scale, data.origSize.X.Offset, 0, 0)
-					end
+		local cache = SearchCache[currentTab] or {}
+		if #cache == 0 then UpdateSearchCache() cache = SearchCache[currentTab] end
+
+		local step = 0
+		for _, data in ipairs(cache) do
+			if data.isSep then 
+				data.element.Visible = (query == "")
+			else
+				local visible = (query == "" or string.find(data.text, query, 1, true))
+				if data.element.Visible ~= visible then
+					data.element.Visible = visible
 				end
-				if i % 15 == 0 then task.wait() end
 			end
-		end)
+			step = step + 1
+			if step % 20 == 0 then RunService.Heartbeat:Wait() end
+		end
 	end
 
 	Track(SearchInputFrame:GetPropertyChangedSignal("Text"):Connect(ApplySearchFilter))
@@ -3876,9 +3874,17 @@ function kailex:createFrame(title, buttontxt)
 		if #Tabs == 1 then underline.Size = UDim2.new(1, 0, 0, 2) end
 
 		Track(tabBtn.MouseEnter:Connect(function() 
-			if currentTab ~= contentFrame then PlayTween(underline, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Size = UDim2.new(0.5, 0, 0, 2)}) end
-			if iconLabel then PlayTween(iconLabel, SharedTweens.Fast, {ImageTransparency = 0.2}) end
-			if SidebarCollapsed and UserInputService:GetLastInputType() ~= Enum.UserInputType.Touch then ShowInfo(text or "Tab") end
+			if currentTab ~= contentFrame then
+				PlayTween(underline, TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Size = UDim2.new(0.5, 0, 0, 2)})
+			end
+
+			if iconLabel then
+				PlayTween(iconLabel, SharedTweens.Fast, {ImageTransparency = 0.2})
+			end
+
+			if SidebarCollapsed and UserInputService:GetLastInputType() ~= Enum.UserInputType.Touch then
+				ShowInfo(text or "Tab")
+			end
 		end))
 
 		Track(tabBtn.MouseLeave:Connect(function() 
