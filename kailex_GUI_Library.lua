@@ -20,6 +20,26 @@
 
 pcall(function() if not game:IsLoaded() then game.Loaded:Wait() end end)
 
+local inst_new = Instance.new
+
+local U2n = UDim2.new
+local U2s = UDim2.fromScale
+local U2o = UDim2.fromOffset
+
+local V2n = Vector2.new
+local V2Z = Vector2.zero
+
+local CRGB = Color3.fromRGB
+local C3n = Color3.new
+
+local EnumSort = Enum.SortOrder.LayoutOrder
+local EnumFill = Enum.FillDirection.Horizontal
+local EnumAlignX = Enum.TextXAlignment.Left
+local EnumAlignY = Enum.VerticalAlignment.Center
+local EnumTouch = Enum.UserInputType.Touch
+local EnumMouse1 = Enum.UserInputType.MouseButton1
+local EnumMouseMove = Enum.UserInputType.MouseMovement
+
 local LibraryConnections = {}
 local function Track(c) table.insert(LibraryConnections, c) return c end
 
@@ -39,38 +59,43 @@ local TextService = Services.TextService
 local TweenService = Services.TweenService
 local UserInputService = Services.UserInputService
 local RunService = Services.RunService
+local HttpService = Services.HttpService
 
 local SafeParent = (function()
 	local s, r = pcall(function() return gethui and gethui() end)
 	if s and r then return r end
 	local s2, r2 = pcall(function() return CoreGui end)
 	if s2 and r2 then return r2 end
-	local s3, r3 = pcall(function() return Players.LocalPlayer:FindFirstChildOfClass("PlayerGui") end)
-	if s3 and r3 then return r3 end
-	return CoreGui
+	return Players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
 end)()
 
-local v3n, v3z = Vector3.new, Vector3.zero
-local cfn, cfa = CFrame.new, CFrame.Angles
-local clamp, floor, rad, random, sqrt = math.clamp, math.floor, math.rad, math.random, math.sqrt
-local huge = math.huge
-local ti_new = TweenInfo.new
-local find, lower, format = string.find, string.lower, string.format
-local t_insert, t_remove, t_find, t_clear = table.insert, table.remove, table.find, table.clear
-local inst_new = Instance.new
-local udim2_new, udim2_off = UDim2.new, UDim2.fromOffset
-local rgb = Color3.fromRGB
+local protect_gui = protectgui or syn and syn.protect_gui or function(gui) end
 
-local U2n, U2s, U2o = UDim2.new, UDim2.fromScale, UDim2.fromOffset
-local V2n, V2Z = Vector2.new, Vector2.zero
-local C3r, C3n = Color3.fromRGB, Color3.new
-local EnumSort = Enum.SortOrder.LayoutOrder
-local EnumFill = Enum.FillDirection.Horizontal
-local EnumAlignX = Enum.TextXAlignment.Left
-local EnumAlignY = Enum.VerticalAlignment.Center
-local EnumTouch = Enum.UserInputType.Touch
-local EnumMouse1 = Enum.UserInputType.MouseButton1
-local EnumMouseMove = Enum.UserInputType.MouseMovement
+local function GenerateRandomName(length)
+	local guid = HttpService:GenerateGUID(false)
+	local cleanName = string.gsub(guid, "-", "")
+	return length and string.sub(cleanName, 1, length) or cleanName
+end
+
+local function Create(class, props)
+	local inst = Instance.new(class)
+	inst.Name = GenerateRandomName()
+
+	local prnt = props.Parent
+	props.Parent = nil
+
+	for k, v in next, props do
+		if type(k) == "number" then
+			v.Parent = inst
+			if v.Name == class then v.Name = GenerateRandomName() end
+		else
+			inst[k] = v
+		end
+	end
+
+	if prnt then inst.Parent = prnt end
+	return inst
+end
 
 local kailex = {
 	Setting = {
@@ -89,27 +114,27 @@ local kailex = {
 		},
 		Theme = {
 			Transparency = 0.1,
-			BackgroundColor = C3r(10, 10, 14),
-			TextColor = C3r(245, 245, 255),
-			BorderColor = C3r(45, 45, 60),
-			AccentColor = C3r(18, 18, 26),
-			NotificationsMainColor = C3r(110, 150, 255),
-			ButtonColor = C3r(20, 20, 28),
-			ErrorColor = C3r(255, 90, 100),
-			TabUnderLineColor = C3r(110, 150, 255),
+			BackgroundColor = CRGB(10, 10, 14),
+			TextColor = CRGB(245, 245, 255),
+			BorderColor = CRGB(45, 45, 60),
+			AccentColor = CRGB(18, 18, 26),
+			NotificationsMainColor = CRGB(110, 150, 255),
+			ButtonColor = CRGB(20, 20, 28),
+			ErrorColor = CRGB(255, 90, 100),
+			TabUnderLineColor = CRGB(110, 150, 255),
 			Toggle = {
-				ToggleOnColor = C3r(110, 150, 255),
-				ToggleOffColor = C3r(30, 30, 40),
-				ToggleOnBorderColor = C3r(130, 170, 255),
-				ToggleOffBorderColor = C3r(55, 55, 75)
+				ToggleOnColor = CRGB(110, 150, 255),
+				ToggleOffColor = CRGB(30, 30, 40),
+				ToggleOnBorderColor = CRGB(130, 170, 255),
+				ToggleOffBorderColor = CRGB(55, 55, 75)
 			},
 			confirmationFrame = {
 				Transparency = 0.05,
-				BackgroundColor = C3r(12, 12, 18),
-				TextColor = C3r(255, 255, 255),
-				BorderColor = C3r(110, 150, 255),
-				ButtonColor = C3r(24, 24, 34),
-				ButtonHoverColor = C3r(36, 36, 48)
+				BackgroundColor = CRGB(12, 12, 18),
+				TextColor = CRGB(255, 255, 255),
+				BorderColor = CRGB(110, 150, 255),
+				ButtonColor = CRGB(24, 24, 34),
+				ButtonHoverColor = CRGB(36, 36, 48)
 			}
 		},
 		Animation = {
@@ -141,8 +166,10 @@ local kailex = {
 		QuickWidgets = true
 	}
 }
+local Setting = kailex.Setting
+local Theme, Layout, Animation, Audio = Setting.Theme, Setting.Layout, Setting.Animation, Setting.Audio
+local TextSize, tTheme, InfoImage = Layout.TextSize, Theme.Toggle, Setting.Components.InfoImage
 
-local HttpService = Services.HttpService
 local isfolder = isfolder or function() return false end
 local makefolder = makefolder or function() end
 local writefile = writefile or function() end
@@ -183,80 +210,259 @@ end
 
 SaveManager:Init()
 
-local function GenerateRandomName(length)
-	local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	local name = ""
-	for _ = 1, length or random(8, 16) do
-		local r = random(1, #chars)
-		name = name .. chars:sub(r, r)
-	end
-	return name
+local function ApplyShadow(target, intensity, size)
+	local shadow = Create("ImageLabel", {
+		Name = "DropShadow",
+		BackgroundTransparency = 1,
+		Image = "rbxassetid://6015897843",
+		ImageColor3 = C3n(0, 0, 0),
+		ImageTransparency = intensity or 0.4,
+		ScaleType = Enum.ScaleType.Slice,
+		SliceCenter = Rect.new(49, 49, 450, 450),
+		Size = U2n(1, size or 40, 1, size or 40),
+		Position = U2n(0.5, 0, 0.5, 2),
+		AnchorPoint = V2n(0.5, 0.5),
+		ZIndex = target.ZIndex - 1,
+		Parent = target
+	})
+	return shadow
 end
 
-local function Create(class, props)
-	local inst = inst_new(class)
-	inst.Name = GenerateRandomName()
+local function MakeDraggable(el, tgt)
+	local dragging, dragInput, mousePos, framePos
+	local dragConnection
 
-	local prnt = props.Parent
-	props.Parent = nil
+	el.InputBegan:Connect(function(input)
+		if input.UserInputType == EnumMouse1 or input.UserInputType == EnumTouch then
+			dragging = true
+			mousePos = input.Position
+			framePos = tgt.Position
 
-	local children = {}
-	local cCount = 0
+			dragConnection = UserInputService.InputChanged:Connect(function(changedInput)
+				if changedInput.UserInputType == EnumMouseMove or changedInput.UserInputType == EnumTouch then
+					local delta = changedInput.Position - mousePos
+					local targetPos = U2n(
+						framePos.X.Scale, framePos.X.Offset + delta.X,
+						framePos.Y.Scale, framePos.Y.Offset + delta.Y
+					)
 
-	for k, v in next, props do
-		if type(k) == "number" then
-			cCount = cCount + 1
-			children[cCount] = v
-		else
-			inst[k] = v
+					TweenService:Create(tgt, TweenInfo.new(0.08, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Position = targetPos}):Play()
+				end
+			end)
+		end
+	end)
+
+	el.InputEnded:Connect(function(input)
+		if input.UserInputType == EnumMouse1 or input.UserInputType == EnumTouch then
+			dragging = false
+
+			if dragConnection then
+				dragConnection:Disconnect()
+				dragConnection = nil
+			end
+		end
+	end)
+end
+
+local ripplePool = {}
+local rippleCount = 0
+
+local function GetRipple()
+	for i = 1, rippleCount do
+		local r = ripplePool[i]
+		if not r.Visible then
+			return r
 		end
 	end
 
-	for i = 1, cCount do
-		children[i].Parent = inst
+	local r = inst_new("Frame")
+	r.BackgroundColor3 = CRGB(255, 255, 255)
+	r.ZIndex = 100
+	r.AnchorPoint = V2n(0.5, 0.5)
+	r.Visible = false
+
+	local corner = inst_new("UICorner")
+	corner.CornerRadius = UDim.new(1, 0)
+	corner.Parent = r
+
+	rippleCount = rippleCount + 1
+	ripplePool[rippleCount] = r
+	return r
+end
+
+local CachedSound = Create("Sound", {Parent = SoundService})
+local function PlayInteractSound(audioType)
+	if kailex.Setting.Sounds then
+		CachedSound.SoundId = kailex.Setting.Audio[audioType] or kailex.Setting.Audio.Click
+		SoundService:PlayLocalSound(CachedSound)
+	end	
+end
+
+local function ApplyRipple(tgt)
+	if not tgt or not tgt.Parent then return end
+	local s = pcall(function() return tgt.Parent end)
+	if not s then return end
+
+	local m = UserInputService:GetMouseLocation()
+	local ins = GuiService:GetGuiInset()
+	local absPos = tgt.AbsolutePosition
+	local absSize = tgt.AbsoluteSize
+	local targetSize = math.sqrt((absSize.X * absSize.X) + (absSize.Y * absSize.Y)) * 1.2
+
+	local rpl = GetRipple()
+	rpl.Position = U2o((m.X - ins.X) - absPos.X, (m.Y - ins.Y) - absPos.Y)
+	rpl.Size = U2o(0, 0)
+	rpl.BackgroundTransparency = 0.5
+	rpl.ZIndex = tgt.ZIndex + 1
+
+	local success = pcall(function()
+		rpl.Parent = tgt
+		rpl.Visible = true
+	end)
+	if not success then
+		rpl.Visible = false
+		return
 	end
 
-	if prnt then
-		inst.Parent = prnt
-	end
+	tgt.ClipsDescendants = true
 
-	return inst
+	Create("UIGradient", {
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0),
+			NumberSequenceKeypoint.new(0.8, 0.5),
+			NumberSequenceKeypoint.new(1, 1)
+		}),
+		Parent = rpl
+	})
+
+	local t = TweenService:Create(rpl, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+		Size = U2o(targetSize, targetSize)
+	})
+
+	local tAlpha = TweenService:Create(rpl, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+		BackgroundTransparency = 1
+	})
+
+	t:Play()
+	tAlpha:Play()
+
+	task.delay(0.6, function()
+		if rpl and rpl.Parent then
+			rpl:ClearAllChildren()
+			rpl.Visible = false
+			rpl.Parent = nil
+		end
+		t:Destroy()
+		tAlpha:Destroy()
+	end)
 end
 
 local function PlayTween(inst, info, props, cb)
 	if not inst or not inst.Parent then return end
+
 	local t = TweenService:Create(inst, info, props)
 	t:Play()
 
-	local connection
-	connection = t.Completed:Connect(function(playbackState)
-		if connection then
+	if cb then
+		local connection
+		connection = t.Completed:Connect(function(state)
 			connection:Disconnect()
-			connection = nil
-		end
-		pcall(function() t:Destroy() end)
-		if cb and playbackState == Enum.PlaybackState.Completed then 
-			task.spawn(cb)
-		end
-	end)
 
-	task.spawn(function()
-		while inst and inst.Parent and t.PlaybackState == Enum.PlaybackState.Playing do
-			task.wait()
-		end
-		if (not inst or not inst.Parent) and connection then
-			connection:Disconnect()
-			connection = nil
-			pcall(function() t:Destroy() end)
-		end
-	end)
+			if state == Enum.PlaybackState.Completed then 
+				cb()
+			end
+
+			t:Destroy()
+		end)
+	else
+		t.Completed:Connect(function() t:Destroy() end)
+	end
 
 	return t
 end
 
-local Setting = kailex.Setting
-local Theme, Layout, Animation, Audio = Setting.Theme, Setting.Layout, Setting.Animation, Setting.Audio
-local TextSize, tTheme, InfoImage = Layout.TextSize, Theme.Toggle, Setting.Components.InfoImage
+function kailex:MakeKeySystem(options)
+	options = options or {}
+	local validKey = options.Key or "1234"
+	local title = options.Title or "Hub Key System"
+	local onComplete = options.OnComplete or function() end
+
+	local keyGui = Create("ScreenGui", { IgnoreGuiInset = true, Parent = SafeParent, DisplayOrder = 999 })
+	local Blur = Instance.new("BlurEffect", game:GetService("Lighting"))
+	Blur.Size = 20
+
+	local MainFrame = Create("Frame", {
+		Size = U2o(350, 220),
+		Position = U2s(0.5, 0.5),
+		AnchorPoint = V2n(0.5, 0.5),
+		BackgroundColor3 = Theme.BackgroundColor,
+		BackgroundTransparency = Theme.Transparency,
+		Parent = keyGui,
+		Create("UICorner", { CornerRadius = Layout.WindowCorner })
+	})
+
+	local Stroke = Create("UIStroke", {Thickness = 1.5, Color = Theme.BorderColor, Parent = MainFrame })
+	ApplyShadow(MainFrame, 0.5, 50)
+	MakeDraggable(MainFrame, MainFrame)
+
+	Create("TextLabel", {
+		Size = U2o(350, 40), Position = U2o(0, 10), BackgroundTransparency = 1,
+		Text = title, Font = Enum.Font.GothamBlack, TextSize = 20, TextColor3 = Theme.TextColor, Parent = MainFrame
+	})
+
+	local InputBox = Create("TextBox", {
+		Size = U2o(310, 40), Position = U2s(0.5, 0.45), AnchorPoint = V2n(0.5, 0.5),
+		BackgroundColor3 = Theme.AccentColor, TextColor3 = Theme.TextColor, Font = Enum.Font.Gotham,
+		TextSize = 14, PlaceholderText = "Enter your key here...", Text = "", Parent = MainFrame,
+		Create("UICorner", { CornerRadius = UDim.new(0.2, 0) }),
+		Create("UIStroke", { Thickness = 1, Color = Theme.BorderColor })
+	})
+
+	local CheckBtn = Create("TextButton", {
+		Size = U2o(145, 35), Position = U2o(20, 160), BackgroundColor3 = Theme.ButtonColor,
+		Text = "Verify Key", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Theme.TextColor, Parent = MainFrame,
+		Create("UICorner", { CornerRadius = UDim.new(0.2, 0) }), Create("UIStroke", { Thickness = 1, Color = Theme.BorderColor })
+	})
+
+	local LinkBtn = Create("TextButton", {
+		Size = U2o(145, 35), Position = U2o(185, 160), BackgroundColor3 = Theme.ButtonColor,
+		Text = "Get Key", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Theme.TextColor, Parent = MainFrame,
+		Create("UICorner", { CornerRadius = UDim.new(0.2, 0) }), Create("UIStroke", { Thickness = 1, Color = Theme.BorderColor })
+	})
+
+	local setclipboard = setclipboard or toclipboard or setrbxclipboard or function(data) return data end
+	Track(LinkBtn.MouseButton1Click:Connect(function()
+		if options.Link then setclipboard(options.Link) kailex:Notification("Link copied to clipboard!") end
+		ApplyRipple(LinkBtn)
+	end))
+
+	Track(CheckBtn.MouseButton1Click:Connect(function()
+		ApplyRipple(CheckBtn)
+		if InputBox.Text == validKey then
+			PlayInteractSound("ToggleOn")
+			PlayTween(Stroke, TweenInfo.new(0.3), { Color = CRGB(50, 255, 50) })
+			task.wait(0.5)
+			PlayTween(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.In), { Size = U2o(0,0) })
+			PlayTween(Blur, TweenInfo.new(0.5), { Size = 0 }, function()
+				Blur:Destroy()
+				keyGui:Destroy()
+				onComplete()
+			end)
+		else
+			PlayInteractSound("Error")
+			local errStroke = InputBox:FindFirstChildOfClass("UIStroke")
+			PlayTween(errStroke, TweenInfo.new(0.2), { Color = Theme.ErrorColor })
+			local origPos = MainFrame.Position
+			for i = 1, 4 do
+				MainFrame.Position = origPos + U2o(math.random(-5, 5), math.random(-5, 5))
+				task.wait(0.05)
+			end
+			MainFrame.Position = origPos
+			PlayTween(errStroke, TweenInfo.new(0.5), { Color = Theme.BorderColor })
+		end
+	end))
+end
+
 local SharedTweens = {
 	HoverIn     = TweenInfo.new(0.25, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out),
 	HoverOut    = TweenInfo.new(0.3, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out),
@@ -324,174 +530,46 @@ function kailex:UpdateTheme(newThemeSettings)
 	end
 end
 
-local CachedSound = Create("Sound", {Parent = SoundService})
-local function PlayInteractSound(audioType)
-	if kailex.Setting.Sounds then
-		CachedSound.SoundId = kailex.Setting.Audio[audioType] or kailex.Setting.Audio.Click
-		SoundService:PlayLocalSound(CachedSound)
-	end	
-end
-
-local ripplePool = {}
-local rippleCount = 0
-
-local function GetRipple()
-	for i = 1, rippleCount do
-		local r = ripplePool[i]
-		if not r.Visible then
-			return r
-		end
-	end
-
-	local r = inst_new("Frame")
-	r.BackgroundColor3 = rgb(255, 255, 255)
-	r.ZIndex = 100
-	r.AnchorPoint = V2n(0.5, 0.5)
-	r.Visible = false
-
-	local corner = inst_new("UICorner")
-	corner.CornerRadius = UDim.new(1, 0)
-	corner.Parent = r
-
-	rippleCount = rippleCount + 1
-	ripplePool[rippleCount] = r
-	return r
-end
-
-local function ApplyRipple(tgt)
-	if not tgt or not tgt.Parent then return end
-	local s = pcall(function() return tgt.Parent end)
-	if not s then return end
-
-	local m = UserInputService:GetMouseLocation()
-	local ins = GuiService:GetGuiInset()
-	local absPos = tgt.AbsolutePosition
-	local absSize = tgt.AbsoluteSize
-	local targetSize = sqrt((absSize.X * absSize.X) + (absSize.Y * absSize.Y)) * 1.2
-
-	local rpl = GetRipple()
-	rpl.Position = udim2_off((m.X - ins.X) - absPos.X, (m.Y - ins.Y) - absPos.Y)
-	rpl.Size = udim2_off(0, 0)
-	rpl.BackgroundTransparency = 0.5
-	rpl.ZIndex = tgt.ZIndex + 1
-
-	local success = pcall(function()
-		rpl.Parent = tgt
-		rpl.Visible = true
-	end)
-	if not success then
-		rpl.Visible = false
-		return
-	end
-
-	tgt.ClipsDescendants = true
-
-	Create("UIGradient", {
-		Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0),
-			NumberSequenceKeypoint.new(0.8, 0.5),
-			NumberSequenceKeypoint.new(1, 1)
-		}),
-		Parent = rpl
-	})
-
-	local t = TweenService:Create(rpl, ti_new(0.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-		Size = udim2_off(targetSize, targetSize)
-	})
-
-	local tAlpha = TweenService:Create(rpl, ti_new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		BackgroundTransparency = 1
-	})
-
-	t:Play()
-	tAlpha:Play()
-
-	local conn
-	conn = t.Completed:Connect(function()
-		conn:Disconnect()
-		rpl:ClearAllChildren()
-		rpl.Visible = false
-		rpl.Parent = nil
-		t:Destroy()
-		tAlpha:Destroy()
-	end)
-end
-
-local hoverTweenInfo = ti_new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-local scaleTweenInfo = ti_new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-local GlobalDragState = false
-
 local function ApplyHover(hit, tgt, hCol, dCol)
-	local strk = tgt:FindFirstChildOfClass("UIStroke")
-
-	local originalThick = strk and strk.Thickness or 0
-	local originalCol = strk and strk.Color or Color3.new(1, 1, 1)
-	local originalTrans = strk and strk.Transparency or 0
-
+	local originalSize = tgt.Size
 	local isHovering, isPressed = false, false
-	local activeTween, activeStrkTween
 
 	local function updateVisuals()
 		local col = isPressed and dCol or (isHovering and hCol or dCol)
+		local targetSize = isPressed and UDim2.new(originalSize.X.Scale, originalSize.X.Offset - 2, originalSize.Y.Scale, originalSize.Y.Offset - 2) or originalSize
 
-		if activeTween then activeTween:Cancel() activeTween:Destroy() end
-		activeTween = TweenService:Create(tgt, hoverTweenInfo, {BackgroundColor3 = col})
-		activeTween:Play()
-
-		if strk then
-			local s = isHovering or isPressed
-
-			if activeStrkTween then activeStrkTween:Cancel() activeStrkTween:Destroy() end
-
-			activeStrkTween = TweenService:Create(strk, hoverTweenInfo, {
-				Thickness = s and originalThick + 0.5 or originalThick,
-				Transparency = s and math.clamp(originalTrans - 0.3, 0, 1) or originalTrans,
-				Color = s and Color3.new(
-					math.clamp(originalCol.R + 0.15, 0, 1), 
-					math.clamp(originalCol.G + 0.15, 0, 1), 
-					math.clamp(originalCol.B + 0.15, 0, 1)
-				) or originalCol
-			})
-
-			activeStrkTween:Play()
-		end
+		PlayTween(tgt, SharedTweens.Fast, {BackgroundColor3 = col, Size = targetSize})
 	end
 
 	local conns = {}
-	t_insert(conns, hit.MouseEnter:Connect(function()
+	table.insert(conns, hit.MouseEnter:Connect(function()
 		if UserInputService:GetLastInputType() == Enum.UserInputType.Touch then return end
 		isHovering = true
 		PlayInteractSound("Hover")
 		updateVisuals()
 	end))
 
-	t_insert(conns, hit.MouseLeave:Connect(function()
-		isHovering = false
-		isPressed = false
+	table.insert(conns, hit.MouseLeave:Connect(function()
+		isHovering, isPressed = false, false
 		updateVisuals()
 	end))
 
-	t_insert(conns, hit.InputBegan:Connect(function(inp)
-		local t = inp.UserInputType
-		if t == Enum.UserInputType.MouseButton1 or t == Enum.UserInputType.Touch then
+	table.insert(conns, hit.InputBegan:Connect(function(inp)
+		if inp.UserInputType == EnumMouse1 or inp.UserInputType == EnumTouch then
 			isPressed = true
 			updateVisuals()
 		end
 	end))
 
-	t_insert(conns, hit.InputEnded:Connect(function(inp)
-		local t = inp.UserInputType
-		if t == Enum.UserInputType.MouseButton1 or t == Enum.UserInputType.Touch then
+	table.insert(conns, hit.InputEnded:Connect(function(inp)
+		if inp.UserInputType == EnumMouse1 or inp.UserInputType == EnumTouch then
 			isPressed = false
 			updateVisuals()
 		end
 	end))
 
 	return function()
-		for i = 1, #conns do conns[i]:Disconnect() end
-		t_clear(conns)
-		if activeTween then activeTween:Cancel() activeTween:Destroy() end
-		if activeStrkTween then activeStrkTween:Cancel() activeStrkTween:Destroy() end
+		for _, c in ipairs(conns) do c:Disconnect() end
 	end
 end
 
@@ -517,6 +595,7 @@ local ScreenGui = Create("ScreenGui", {
 })
 
 kailex.CurrentScreenGui = ScreenGui
+protect_gui(ScreenGui)
 
 local CFS = false
 function kailex:ConfirmationFrame(text, onAccept)
@@ -638,54 +717,55 @@ local function GetAdaptiveSize(scaleX, scaleY)
 	)
 end
 
-local function ApplyShadow(target, intensity, size)
-	local shadow = Create("ImageLabel", {
-		Name = "DropShadow",
-		BackgroundTransparency = 1,
-		Image = "rbxassetid://6015897843",
-		ImageColor3 = C3n(0, 0, 0),
-		ImageTransparency = intensity or 0.4,
-		ScaleType = Enum.ScaleType.Slice,
-		SliceCenter = Rect.new(49, 49, 450, 450),
-		Size = U2n(1, size or 40, 1, size or 40),
-		Position = U2n(0.5, 0, 0.5, 2),
-		AnchorPoint = V2n(0.5, 0.5),
-		ZIndex = target.ZIndex - 1,
-		Parent = target
-	})
-	return shadow
-end
+local function CreateElementBase(parent, name, hasLabel)
+	local base = inst_new("Frame")
+	base.Name = GenerateRandomName()
+	base.Size = Layout.ButtonSize
+	base.BackgroundColor3 = Theme.ButtonColor
+	base.BackgroundTransparency = Theme.Transparency + 0.2
+	base.Parent = parent
 
-local function CreateBaseComp(parent)
-	return Create("Frame", {
-		Size = Layout.ButtonSize,
-		BackgroundColor3 = Theme.ButtonColor,
-		BackgroundTransparency = Theme.Transparency + 0.2,
-		ClipsDescendants = false,
-		Parent = parent,
-		GetCorner(),
-		GetStroke(),
-		Create("UIPadding", {PaddingLeft = UDim.new(0.02, 0), PaddingRight = UDim.new(0.02, 0)}),
-		Create("UIListLayout", {Padding = UDim.new(0.02, 0), FillDirection = EnumFill, SortOrder = EnumSort, VerticalAlignment = EnumAlignY})
-	})
-end
+	local corner = inst_new("UICorner")
+	corner.CornerRadius = Layout.ElementCorner
+	corner.Parent = base
 
-local function CreateLabeledBase(parent, name, sizeX)
-	local baseFrame = CreateBaseComp(parent)
-	local btn = Create("TextButton", {
-		Size = U2s(sizeX or 0.813, 1),
-		BackgroundTransparency = 1,
-		Position = Layout.ButtonPOS,
-		Text = name or "Element",
-		TextColor3 = Theme.TextColor,
-		TextScaled = true,
-		TextXAlignment = EnumAlignX,
-		AutoButtonColor = false,
-		ZIndex = 3,
-		Parent = baseFrame,
-		Create("UIFlexItem", {FlexMode = Enum.UIFlexMode.Fill})
-	})
-	return baseFrame, btn
+	local stroke = inst_new("UIStroke")
+	stroke.Thickness = 1.2
+	stroke.Color = Theme.BorderColor
+	stroke.Transparency = 0.6
+	stroke.Parent = base
+
+	local padding = inst_new("UIPadding")
+	padding.PaddingLeft = UDim.new(0, 8)
+	padding.PaddingRight = UDim.new(0, 8)
+	padding.Parent = base
+
+	local layout = inst_new("UIListLayout")
+	layout.Padding = UDim.new(0, 8)
+	layout.FillDirection = EnumFill
+	layout.SortOrder = EnumSort
+	layout.VerticalAlignment = EnumAlignY
+	layout.Parent = base
+
+	local label
+	if hasLabel then
+		label = inst_new("TextButton")
+		label.Name = GenerateRandomName()
+		label.Size = U2s(0.6, 1)
+		label.BackgroundTransparency = 1
+		label.Text = name or ""
+		label.TextColor3 = Theme.TextColor
+		label.TextScaled = true
+		label.TextXAlignment = EnumAlignX
+		label.AutoButtonColor = false
+		label.Parent = base
+
+		local flex = inst_new("UIFlexItem")
+		flex.FlexMode = Enum.UIFlexMode.Fill
+		flex.Parent = label
+	end
+
+	return base, label
 end
 
 local function CreateCleaner()
@@ -699,45 +779,6 @@ local function CreateCleaner()
 			table.clear(connections)
 		end
 	}
-end
-
-local function MakeDraggable(el, tgt)
-	local dragging = false
-	local dragInput, mousePos, framePos
-
-	el.InputBegan:Connect(function(input)
-		if input.UserInputType == EnumMouse1 or input.UserInputType == EnumTouch then
-			dragging = true
-			dragInput = input
-			mousePos = input.Position
-			framePos = tgt.Position
-
-			local endConn
-			endConn = input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-					if endConn then endConn:Disconnect() end
-				end
-			end)
-		end
-	end)
-
-	el.InputChanged:Connect(function(input)
-		if input.UserInputType == EnumMouseMove or input.UserInputType == EnumTouch then
-			dragInput = input
-		end
-	end)
-
-	UserInputService.InputChanged:Connect(function(input)
-		if input == dragInput and dragging then
-			local delta = input.Position - mousePos
-			local targetPos = udim2_new(
-				framePos.X.Scale, framePos.X.Offset + delta.X,
-				framePos.Y.Scale, framePos.Y.Offset + delta.Y
-			)
-			TweenService:Create(tgt, TweenInfo.new(0.15, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = targetPos}):Play()
-		end
-	end)
 end
 
 local ToolTipFrame = Create("Frame", {
@@ -827,8 +868,8 @@ local function GetNotificationInstance()
 	end
 
 	local n = Create("Frame", {
-		Size = udim2_new(0.8, 0, 0, 35),
-		Position = udim2_off(0, 0),
+		Size = U2n(0.8, 0, 0, 35),
+		Position = U2o(0, 0),
 		BackgroundTransparency = Theme.Transparency,
 		BackgroundColor3 = Theme.BackgroundColor,
 		Visible = false,
@@ -847,8 +888,8 @@ local function GetNotificationInstance()
 	})
 
 	local txtLbl = Create("TextLabel", {
-		Size = udim2_new(0.9, 0, 0.9, 0),
-		Position = udim2_new(0.05, 0, 0.05, 0),
+		Size = U2n(0.9, 0, 0.9, 0),
+		Position = U2n(0.05, 0, 0.05, 0),
 		BackgroundTransparency = 1,
 		TextColor3 = Theme.TextColor,
 		TextScaled = true,
@@ -857,8 +898,8 @@ local function GetNotificationInstance()
 	})
 
 	local bar = Create("Frame", {
-		Position = udim2_new(0, 0, 0.95, 0),
-		Size = udim2_new(1, 0, 0.05, 0),
+		Position = U2n(0, 0, 0.95, 0),
+		Size = U2n(1, 0, 0.05, 0),
 		BorderSizePixel = 0,
 		Parent = n,
 		Create("UIGradient", {
@@ -871,7 +912,7 @@ local function GetNotificationInstance()
 	})
 
 	local dBtn = Create("TextButton", {
-		Size = udim2_new(1, 0, 1, 0),
+		Size = U2n(1, 0, 1, 0),
 		BackgroundTransparency = 1,
 		Text = "",
 		ZIndex = 10,
@@ -890,7 +931,7 @@ end
 local function ProcessNotification()
 	if ActiveNotifications >= MAX_NOTIFICATIONS or #NotificationQueue == 0 then return end
 	ActiveNotifications = ActiveNotifications + 1
-	local txt = t_remove(NotificationQueue, 1)
+	local txt = table.remove(NotificationQueue, 1)
 
 	local n = GetNotificationInstance()
 	ApplyShadow(n, 0.45, 55)
@@ -899,21 +940,21 @@ local function ProcessNotification()
 	local btnObj = n:FindFirstChild(n:GetAttribute("BtnObj"))
 
 	txtObj.Text = txt
-	barObj.Size = udim2_new(1, 0, 0.05, 0)
-	n.Size = udim2_new(0.8, 0, 0, 35)
+	barObj.Size = U2n(1, 0, 0.05, 0)
+	n.Size = U2n(0.8, 0, 0, 35)
 	n.BackgroundTransparency = 1
 	txtObj.TextTransparency = 1
 	n.Visible = true
 
-	PlayTween(n, ti_new(0.75, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Size = udim2_new(1, 0, 0, 38),
+	PlayTween(n, TweenInfo.new(0.75, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Size = U2n(1, 0, 0, 38),
 		BackgroundTransparency = Theme.Transparency - 0.05
 	})
-	PlayTween(txtObj, ti_new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+	PlayTween(txtObj, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		TextTransparency = 0
 	})
 
-	local progressTween = PlayTween(barObj, ti_new(4, Enum.EasingStyle.Linear), {Size = udim2_new(0, 0, 0.05, 0)})
+	local progressTween = PlayTween(barObj, TweenInfo.new(4, Enum.EasingStyle.Linear), {Size = U2n(0, 0, 0.05, 0)})
 	local dismissed = false
 
 	local function dismissNotification()
@@ -921,11 +962,11 @@ local function ProcessNotification()
 		dismissed = true
 		if progressTween then progressTween:Cancel() end
 
-		PlayTween(n, ti_new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
-			Size = udim2_new(0.8, 0, 0, 35),
+		PlayTween(n, TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+			Size = U2n(0.8, 0, 0, 35),
 			BackgroundTransparency = 1
 		})
-		PlayTween(txtObj, ti_new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+		PlayTween(txtObj, TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
 			TextTransparency = 1
 		}, function()
 			n.Visible = false
@@ -950,7 +991,6 @@ function kailex:Notification(txt)
 	table.insert(NotificationQueue, txt)
 	ProcessNotification()
 end
-
 
 function kailex:MakeLoadingScreen(text, delay, callback)
 	local loadGui = Create("ScreenGui", {
@@ -979,7 +1019,7 @@ function kailex:MakeLoadingScreen(text, delay, callback)
 	local barFill = Create("Frame", {
 		Size = U2s(0, 1), BackgroundColor3 = Theme.Toggle.ToggleOnColor, Parent = barBg,
 		Create("UICorner", { CornerRadius = UDim.new(1, 0) }),
-		Create("UIGradient", { Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, C3r(255, 255, 255)), ColorSequenceKeypoint.new(1, Theme.Toggle.ToggleOnColor) }) })
+		Create("UIGradient", { Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, CRGB(255, 255, 255)), ColorSequenceKeypoint.new(1, Theme.Toggle.ToggleOnColor) }) })
 	})
 
 	PlayTween(barFill, TweenInfo.new(delay or 2.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { Size = U2s(1, 1) })
@@ -993,83 +1033,6 @@ function kailex:MakeLoadingScreen(text, delay, callback)
 			if callback then callback() end
 		end)
 	end)
-end
-
-function kailex:MakeKeySystem(options)
-	options = options or {}
-	local validKey = options.Key or "1234"
-	local title = options.Title or "Hub Key System"
-	local onComplete = options.OnComplete or function() end
-
-	local keyGui = Create("ScreenGui", { IgnoreGuiInset = true, Parent = SafeParent, DisplayOrder = 999 })
-	local Blur = Instance.new("BlurEffect", game:GetService("Lighting"))
-	Blur.Size = 20
-
-	local MainFrame = Create("Frame", {
-		Size = U2o(350, 220), Position = U2s(0.5, 0.5), AnchorPoint = V2n(0.5, 0.5),
-		BackgroundColor3 = Theme.BackgroundColor, BackgroundTransparency = Theme.Transparency,
-		Parent = keyGui, Create("UICorner", { CornerRadius = Layout.WindowCorner })
-	})
-	local Stroke = Create("UIStroke", { Thickness = 1.5, Color = Theme.BorderColor, Parent = MainFrame })
-	ApplyShadow(MainFrame, 0.5, 50)
-	MakeDraggable(MainFrame, MainFrame)
-
-	Create("TextLabel", {
-		Size = U2o(350, 40), Position = U2o(0, 10), BackgroundTransparency = 1,
-		Text = title, Font = Enum.Font.GothamBlack, TextSize = 20, TextColor3 = Theme.TextColor, Parent = MainFrame
-	})
-
-	local InputBox = Create("TextBox", {
-		Size = U2o(310, 40), Position = U2s(0.5, 0.45), AnchorPoint = V2n(0.5, 0.5),
-		BackgroundColor3 = Theme.AccentColor, TextColor3 = Theme.TextColor, Font = Enum.Font.Gotham,
-		TextSize = 14, PlaceholderText = "Enter your key here...", Text = "", Parent = MainFrame,
-		Create("UICorner", { CornerRadius = UDim.new(0.2, 0) }),
-		Create("UIStroke", { Thickness = 1, Color = Theme.BorderColor })
-	})
-
-	local CheckBtn = Create("TextButton", {
-		Size = U2o(145, 35), Position = U2o(20, 160), BackgroundColor3 = Theme.ButtonColor,
-		Text = "Verify Key", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Theme.TextColor, Parent = MainFrame,
-		Create("UICorner", { CornerRadius = UDim.new(0.2, 0) }), Create("UIStroke", { Thickness = 1, Color = Theme.BorderColor })
-	})
-
-	local LinkBtn = Create("TextButton", {
-		Size = U2o(145, 35), Position = U2o(185, 160), BackgroundColor3 = Theme.ButtonColor,
-		Text = "Get Key", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Theme.TextColor, Parent = MainFrame,
-		Create("UICorner", { CornerRadius = UDim.new(0.2, 0) }), Create("UIStroke", { Thickness = 1, Color = Theme.BorderColor })
-	})
-
-	local setclipboard = setclipboard or toclipboard or setrbxclipboard or function(data) return data end
-	Track(LinkBtn.MouseButton1Click:Connect(function()
-		if options.Link then setclipboard(options.Link) kailex:Notification("Link copied to clipboard!") end
-		ApplyRipple(LinkBtn)
-	end))
-
-	Track(CheckBtn.MouseButton1Click:Connect(function()
-		ApplyRipple(CheckBtn)
-		if InputBox.Text == validKey then
-			PlayInteractSound("ToggleOn")
-			PlayTween(Stroke, TweenInfo.new(0.3), { Color = C3r(50, 255, 50) })
-			task.wait(0.5)
-			PlayTween(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.In), { Size = U2o(0,0) })
-			PlayTween(Blur, TweenInfo.new(0.5), { Size = 0 }, function()
-				Blur:Destroy()
-				keyGui:Destroy()
-				onComplete()
-			end)
-		else
-			PlayInteractSound("Error")
-			local errStroke = InputBox:FindFirstChildOfClass("UIStroke")
-			PlayTween(errStroke, TweenInfo.new(0.2), { Color = Theme.ErrorColor })
-			local origPos = MainFrame.Position
-			for i = 1, 4 do
-				MainFrame.Position = origPos + U2o(math.random(-5, 5), math.random(-5, 5))
-				task.wait(0.05)
-			end
-			MainFrame.Position = origPos
-			PlayTween(errStroke, TweenInfo.new(0.5), { Color = Theme.BorderColor })
-		end
-	end))
 end
 
 local function HandleInfo(parentFrame, info)
@@ -1189,7 +1152,7 @@ local function CreateQuickWidget(name, cType, callback, initialState)
 
 	local CloseBtn = Create("TextButton", {
 		Size = U2o(16, 16), Position = U2o(-5, -5), BackgroundColor3 = Theme.ErrorColor,
-		Text = "X", Font = Enum.Font.GothamBold, TextSize = 10, TextColor3 = C3r(255,255,255),
+		Text = "X", Font = Enum.Font.GothamBold, TextSize = 10, TextColor3 = CRGB(255,255,255),
 		ZIndex = 10000, Parent = WidgetContainer, Create("UICorner", { CornerRadius = UDim.new(1, 0) })
 	})
 
@@ -1266,22 +1229,27 @@ local function BuildComponents(compTable, parent, prnt2)
 		for _, child in ipairs(list:GetChildren()) do
 			if child:IsA("TextButton") then
 				if expanded then
-					child.Position = U2o(0, -10)
+					child.Position = U2o(-15, 0)
 					child.TextTransparency = 1
 					child.BackgroundTransparency = 1
+
+					task.delay(delayTime, function()
+						if child and child.Parent then
+							PlayTween(child, TweenInfo.new(0.35, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+								BackgroundTransparency = 0.1, 
+								TextTransparency = 0,
+								Position = U2o(0, 0)
+							})
+						end
+					end)
+					delayTime = delayTime + 0.02
+				else
+					PlayTween(child, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+						BackgroundTransparency = 1, 
+						TextTransparency = 1,
+						Position = U2o(15, 0)
+					})
 				end
-
-				task.delay(expanded and delayTime or 0, function()
-					if child and child.Parent then
-						PlayTween(child, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-							BackgroundTransparency = expanded and 0.1 or 1, 
-							TextTransparency = expanded and 0 or 1,
-							Position = U2o(0, 0)
-						})
-					end
-				end)
-
-				delayTime = delayTime + 0.03
 			end
 		end
 	end
@@ -1308,7 +1276,7 @@ local function BuildComponents(compTable, parent, prnt2)
 
 		local dot = Create("Frame", {
 			AnchorPoint = V2n(0, 0.5), Size = U2o(14, 14),
-			Position = U2n(0, toggled and 20 or 2, 0.5, 0), BackgroundColor3 = C3r(255, 255, 255), 
+			Position = U2n(0, toggled and 20 or 2, 0.5, 0), BackgroundColor3 = CRGB(255, 255, 255), 
 			Parent = btn,
 			Create("UIStroke", {Thickness = 1, Color = C3n(0,0,0), Transparency = 0.8, ApplyStrokeMode = Enum.ApplyStrokeMode.Border}),
 			Create("UIGradient", {
@@ -1376,7 +1344,7 @@ local function BuildComponents(compTable, parent, prnt2)
 		local api = {} 
 		local currentVal = SaveManager:Get(name, beginVal)
 		local callback = callback or function() end
-		local baseFrame = CreateBaseComp(parent)
+		local baseFrame = CreateElementBase(parent)
 		local cleaner = CreateCleaner()
 
 		local label = Create("TextLabel", {
@@ -1420,7 +1388,7 @@ local function BuildComponents(compTable, parent, prnt2)
 			Parent = sliderTrack, 
 			Create("UICorner", {CornerRadius = UDim.new(1, 0)}),
 			Create("UIGradient", {
-				Color = ColorSequence.new({ColorSequenceKeypoint.new(0, C3r(255,255,255)),
+				Color = ColorSequence.new({ColorSequenceKeypoint.new(0, CRGB(255,255,255)),
 					ColorSequenceKeypoint.new(1, Theme.Toggle.ToggleOnColor)
 				}),
 				Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.5),
@@ -1433,7 +1401,7 @@ local function BuildComponents(compTable, parent, prnt2)
 			AnchorPoint = V2n(0.5, 0.5),
 			Size = U2o(14, 14),
 			Position = U2n(1, 0, 0.5, 0),
-			BackgroundColor3 = C3r(255, 255, 255), 
+			BackgroundColor3 = CRGB(255, 255, 255), 
 			ZIndex = 5,
 			Parent = sliderFill,
 			Create("UICorner", {CornerRadius = UDim.new(1, 0)}),
@@ -1492,7 +1460,7 @@ local function BuildComponents(compTable, parent, prnt2)
 						end
 
 						PlayTween(sTUIS, TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Color = Theme.BorderColor, Transparency = 0.5})
-						PlayTween(sliderKnob, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = U2o(14, 14), BackgroundColor3 = C3r(255, 255, 255)})
+						PlayTween(sliderKnob, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = U2o(14, 14), BackgroundColor3 = CRGB(255, 255, 255)})
 						PlayTween(textBox, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextColor3 = Theme.TextColor})
 
 						if moveConn then moveConn:Disconnect() end 
@@ -1556,7 +1524,7 @@ local function BuildComponents(compTable, parent, prnt2)
 		local selected = SaveManager:Get(name, defaultVal)
 		local expanded
 
-		local baseFrame = CreateBaseComp(parent)
+		local baseFrame = CreateElementBase(parent)
 
 		local btn = Create("TextButton", {
 			BackgroundTransparency = 1, 
@@ -1840,7 +1808,7 @@ local function BuildComponents(compTable, parent, prnt2)
 		local callback = callback or function() end
 		local defaultVal = SaveManager:Get(name, defaultVal or false)
 
-		local baseFrame, btn = CreateLabeledBase(parent, name, U2n(1, -60, 1, 0))
+		local baseFrame, btn = CreateElementBase(parent, name, U2n(1, -60, 1, 0))
 
 		if kailex.Setting.QuickWidgets then btn.Position = U2n(0.1, 0, 0, 0) end
 
@@ -1939,7 +1907,7 @@ local function BuildComponents(compTable, parent, prnt2)
 			return arr
 		end
 
-		local baseFrame = CreateBaseComp(parent)
+		local baseFrame = CreateElementBase(parent)
 
 		local btn = Create("TextButton", {
 			BackgroundTransparency = 1, 
@@ -2277,7 +2245,7 @@ local function BuildComponents(compTable, parent, prnt2)
 
 		Tabs[#Tabs + 1] = childContent 
 
-		local baseFrame = CreateBaseComp(parent)
+		local baseFrame = CreateElementBase(parent)
 		local btn = Create("TextButton", {
 			BackgroundTransparency = 1, 
 			Position = Layout.ButtonPOS, 
@@ -2309,7 +2277,7 @@ local function BuildComponents(compTable, parent, prnt2)
 			parent.CanvasPosition = V2n(0, 0)
 		end))
 
-		local backBase = CreateBaseComp(childContent)
+		local backBase = CreateElementBase(childContent)
 		local backBtn = Create("TextButton", {
 			BackgroundTransparency = 1, 
 			Position = Layout.ButtonPOS, 
@@ -2360,7 +2328,7 @@ local function BuildComponents(compTable, parent, prnt2)
 		local api = {}
 		local callback = callback or function() end
 
-		local baseFrame, label = CreateLabeledBase(parent, name)
+		local baseFrame, label = CreateElementBase(parent, name)
 
 		local textBox = Create("TextBox", {
 			BackgroundColor3 = Theme.AccentColor,
@@ -2428,7 +2396,7 @@ local function BuildComponents(compTable, parent, prnt2)
 			return string.format("%02X%02X%02X", r, g, b)
 		end
 
-		local baseFrame = CreateBaseComp(parent)
+		local baseFrame = CreateElementBase(parent)
 
 		local innerFrame = Create("Frame", {
 			Size = U2s(1, 1),
@@ -2535,13 +2503,13 @@ local function BuildComponents(compTable, parent, prnt2)
 			Create("UIGradient", {
 				Rotation = 90,
 				Color = ColorSequence.new({
-					ColorSequenceKeypoint.new(0, C3r(255, 0, 0)),
-					ColorSequenceKeypoint.new(0.167, C3r(255, 255, 0)),
-					ColorSequenceKeypoint.new(0.333, C3r(0, 255, 0)),
-					ColorSequenceKeypoint.new(0.5, C3r(0, 255, 255)),
-					ColorSequenceKeypoint.new(0.667, C3r(0, 0, 255)),
-					ColorSequenceKeypoint.new(0.833, C3r(255, 0, 255)),
-					ColorSequenceKeypoint.new(1, C3r(255, 0, 0))
+					ColorSequenceKeypoint.new(0, CRGB(255, 0, 0)),
+					ColorSequenceKeypoint.new(0.167, CRGB(255, 255, 0)),
+					ColorSequenceKeypoint.new(0.333, CRGB(0, 255, 0)),
+					ColorSequenceKeypoint.new(0.5, CRGB(0, 255, 255)),
+					ColorSequenceKeypoint.new(0.667, CRGB(0, 0, 255)),
+					ColorSequenceKeypoint.new(0.833, CRGB(255, 0, 255)),
+					ColorSequenceKeypoint.new(1, CRGB(255, 0, 0))
 				})
 			})
 		})
@@ -2630,10 +2598,10 @@ local function BuildComponents(compTable, parent, prnt2)
 		})
 
 		local presetColors = {
-			C3r(255, 50, 50), C3r(255, 150, 50), C3r(255, 255, 50),
-			C3r(50, 255, 50), C3r(50, 255, 255), C3r(50, 150, 255),
-			C3r(150, 50, 255), C3r(255, 50, 255), C3r(255, 255, 255),
-			C3r(20, 20, 20)
+			CRGB(255, 50, 50), CRGB(255, 150, 50), CRGB(255, 255, 50),
+			CRGB(50, 255, 50), CRGB(50, 255, 255), CRGB(50, 150, 255),
+			CRGB(150, 50, 255), CRGB(255, 50, 255), CRGB(255, 255, 255),
+			CRGB(20, 20, 20)
 		}
 
 		local function UpdateColor(isTyping)
@@ -2772,7 +2740,7 @@ local function BuildComponents(compTable, parent, prnt2)
 			end
 
 			if r and g and b then
-				local col = C3r(tonumber(r, 16), tonumber(g, 16), tonumber(b, 16))
+				local col = CRGB(tonumber(r, 16), tonumber(g, 16), tonumber(b, 16))
 				h, s, v = col:ToHSV()
 				UpdateColor(false)
 			else
@@ -2783,7 +2751,7 @@ local function BuildComponents(compTable, parent, prnt2)
 		Track(rgbInput.FocusLost:Connect(function()
 			local r, g, b = rgbInput.Text:match("(%d+)%s*,%s*(%d+)%s*,%s*(%d+)")
 			if r and g and b then
-				local col = C3r(math.clamp(tonumber(r), 0, 255), math.clamp(tonumber(g), 0, 255), math.clamp(tonumber(b), 0, 255))
+				local col = CRGB(math.clamp(tonumber(r), 0, 255), math.clamp(tonumber(g), 0, 255), math.clamp(tonumber(b), 0, 255))
 				h, s, v = col:ToHSV()
 				UpdateColor(false)
 			else
@@ -2826,7 +2794,7 @@ local function BuildComponents(compTable, parent, prnt2)
 		local info, defBind, callback = getArgs(...)
 		local api = {}
 		local callback = callback or function() end
-		local baseFrame = CreateBaseComp(parent) 
+		local baseFrame = CreateElementBase(parent) 
 		local currentBind = defBind or Enum.KeyCode.Unknown 
 		local isBinding = false
 
@@ -2988,17 +2956,21 @@ local function BuildComponents(compTable, parent, prnt2)
 
 		if type(defaultVals) == "table" then
 			for _, val in ipairs(defaultVals) do
-				if table.find(items, val) then selectedItems[val] = true end
+				if table.find(items, val) then
+					selectedItems[val] = true
+				end
 			end
 		end
 
 		local function getSelectedArray()
 			local arr = {}
-			for k in pairs(selectedItems) do table.insert(arr, k) end
+			for k in pairs(selectedItems) do
+				table.insert(arr, k)
+			end
 			return arr
 		end
 
-		local baseFrame = CreateBaseComp(parent)
+		local baseFrame = CreateElementBase(parent)
 
 		local btn = Create("TextButton", {
 			BackgroundTransparency = 1, 
@@ -3049,12 +3021,14 @@ local function BuildComponents(compTable, parent, prnt2)
 			for _ in pairs(selectedItems) do count += 1 end
 			btn.Text = count > 0 and (name .. ":[" .. count .. "]") or name
 		end
+
 		updateBtnText()
 
 		local function ToggleDropdown(forceState)
 			local targetState = forceState ~= nil and forceState or not expanded
-			if targetState == expanded then return end 
-			expanded = targetState 
+			if targetState == expanded then return end
+			expanded = targetState
+
 			PlayInteractSound()
 			AnimateDropdown(listFrame, iconBtn, expanded, #items, perRow)
 		end
@@ -3079,15 +3053,19 @@ local function BuildComponents(compTable, parent, prnt2)
 						Parent = listFrame,
 						GetCorner()
 					})
+
 					table.insert(itemPool, itemBtn)
+
 					Track(itemBtn.MouseButton1Click:Connect(function()
 						local selected = items[table.find(itemPool, itemBtn)]
 						btn.Text = selected and (name .. ": " .. tostring(selected)) or name
 						SaveManager:Set(name, selected)
+
 						callback(selected)
 						ToggleDropdown(false)
 					end))
 				end
+
 				itemBtn.Text = tostring(item)
 				itemBtn.Visible = true
 			end
@@ -3099,41 +3077,89 @@ local function BuildComponents(compTable, parent, prnt2)
 			currentToggleVal = doToggle()
 			callback(getSelectedArray(), currentToggleVal)
 		end
+
 		Track(tBtn.MouseButton1Click:Connect(action))
-		for _, b in {btn, iconBtn} do Track(b.MouseButton1Click:Connect(function() ToggleDropdown() end)) end
+		for _, b in {btn, iconBtn} do
+			Track(b.MouseButton1Click:Connect(function()
+				ToggleDropdown()
+			end))
+		end
 
-		if next(selectedItems) then task.spawn(function() callback(getSelectedArray(), currentToggleVal) end) end
-		if defaultToggle then task.spawn(function() callback(getSelectedArray(), currentToggleVal) end) end
+		if next(selectedItems) then
+			task.spawn(function()
+				callback(getSelectedArray(), currentToggleVal)
+			end)
+		end
 
-		function api:ToggleDropdown(state) ToggleDropdown(state) end
-		function api:newName(n) name = n updateBtnText() end
-		function api:newInfo(i) infoHandler:Update(i) end
-		function api:newCallback(c) callback = c end
+		if defaultToggle then
+			task.spawn(function()
+				callback(getSelectedArray(), currentToggleVal)
+			end)
+		end
+
+		function api:ToggleDropdown(state)
+			ToggleDropdown(state)
+		end
+
+		function api:newName(n)
+			name = n
+			updateBtnText()
+		end
+
+		function api:newInfo(i)
+			infoHandler:Update(i)
+		end
+
+		function api:newCallback(c)
+			callback = c
+		end
+
 		function api:setItems(t) 
 			if type(t) == "table" then 
 				items = t 
 				local newSel = {}
-				for k in pairs(selectedItems) do if table.find(items, k) then newSel[k] = true end end
+
+				for k in pairs(selectedItems) do
+					if table.find(items, k) then
+						newSel[k] = true
+					end
+				end
+
 				selectedItems = newSel
+
 				updateBtnText()
 				BuildItems() 
 			end 
 		end
+
 		function api:getSelected() return getSelectedArray() end
+
 		function api:setSelected(arr, silent) 
 			if type(arr) == "table" then
 				selectedItems = {}
-				for _, v in ipairs(arr) do if table.find(items, v) then selectedItems[v] = true end end
+
+				for _, v in ipairs(arr) do
+					if table.find(items, v) then
+						selectedItems[v] = true
+					end
+				end
+
 				updateBtnText()
 				BuildItems()
+
 				if not silent then callback(getSelectedArray(), currentToggleVal) end
 			end
 		end
-		function api:destroy() baseFrame:Destroy() listFrame:Destroy() end
+
+		function api:destroy()
+			baseFrame:Destroy()
+			listFrame:Destroy()
+		end
 
 		function api:Visible(state)
 			local targetState = state ~= nil and state or not baseFrame.Visible
 			baseFrame.Visible = targetState
+
 			if not targetState and expanded then ToggleDropdown(false) end
 		end
 
@@ -3235,7 +3261,7 @@ local function BuildComponents(compTable, parent, prnt2)
 	function compTable:addSeparator() 
 		local api = {}
 		local sep = Create("Frame", {
-			BackgroundColor3 = C3r(120, 120, 120), BackgroundTransparency = Theme.Transparency + 0.5, 
+			BackgroundColor3 = CRGB(120, 120, 120), BackgroundTransparency = Theme.Transparency + 0.5, 
 			Size = U2n(0.95, 0, 0, 1), Parent = parent, Create("UICorner", {CornerRadius = UDim.new(1, 0)}),
 		})
 
@@ -3243,6 +3269,30 @@ local function BuildComponents(compTable, parent, prnt2)
 		return api
 	end
 	return compTable	
+end
+
+local function SetupHeader(Frame, titleText)
+	local Header = inst_new("Frame")
+	Header.Size = U2s(1, 0.12)
+	Header.BackgroundColor3 = Theme.AccentColor
+	Header.BackgroundTransparency = Theme.Transparency
+	Header.Parent = Frame
+
+	local corner = inst_new("UICorner")
+	corner.CornerRadius = Layout.WindowCorner
+	corner.Parent = Header
+
+	local title = inst_new("TextLabel")
+	title.Size = U2s(0.5, 0.6)
+	title.Position = U2s(0.09, 0.2)
+	title.Text = titleText or "kailex"
+	title.TextColor3 = Theme.TextColor
+	title.TextScaled = true
+	title.BackgroundTransparency = 1
+	title.TextXAlignment = EnumAlignX
+	title.Parent = Header
+
+	return Header, title
 end
 
 function kailex:createFrame(title, buttontxt)
@@ -3297,140 +3347,7 @@ function kailex:createFrame(title, buttontxt)
 		Create("UICorner", {CornerRadius = Layout.WindowCorner })
 	})
 
-	local Header = Create("Frame", { 
-		Size = U2s(1, 0.125),
-		Position = U2s(0, -0.15),
-		BackgroundColor3 = Theme.AccentColor,
-		BackgroundTransparency = Theme.Transparency,
-		Active = true,
-		Parent = ContentClipper,
-		Create("UICorner", {CornerRadius = Layout.WindowCorner}) 
-	})
-
-	local HeaderLine = Create("Frame", {
-		Size = U2n(1, 0, 0, 1),
-		Position = U2n(0, 0, 1, 0),
-		BackgroundColor3 = Theme.BorderColor,
-		BorderSizePixel = 0,
-		Parent = Header,
-		Create("UIGradient", {
-			Transparency = NumberSequence.new({
-				NumberSequenceKeypoint.new(0, 1),
-				NumberSequenceKeypoint.new(0.5, 0),
-				NumberSequenceKeypoint.new(1, 1)
-			})
-		})
-	})
-
-	MakeDraggable(Header, Frame)
-
-	local SidebarToggleBtn = Create("TextButton", {
-		Size = U2s(0.06, 1),
-		Position = U2s(0.02, 0),
-		BackgroundTransparency = 1,
-		Text = "≡",
-		Font = Enum.Font.GothamBold,
-		TextScaled = true,
-		TextColor3 = Theme.TextColor,
-		Parent = Header
-	})
-
-	local titleLbl = Create("TextLabel", {
-		Size = U2s(0.5, 0.6),
-		Position = U2s(0.09, 0.2),
-		Text = title or "kailex",
-		TextColor3 = Theme.TextColor,
-		TextScaled = true,
-		TextXAlignment = EnumAlignX,
-		BackgroundTransparency = 1,
-		Parent = Header
-	})
-
-	local SearchContainer = Create("Frame", {
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(0.82, 0, 0.5, 0),
-		Size = UDim2.new(0.06, 0, 0.75, 0),
-		BackgroundColor3 = Theme.AccentColor,
-		BackgroundTransparency = 1,
-		ClipsDescendants = true,
-		Parent = Header,
-		Create("UICorner", {CornerRadius = UDim.new(0.3, 0)})
-	})
-
-	local SCUIS = Create("UIStroke", {
-		Thickness = 1.5,
-		Color = Theme.BorderColor,
-		Transparency = 1,
-		Parent = SearchContainer
-	})
-
-	local SearchIconBtn = Create("ImageButton", {
-		AnchorPoint = V2n(1, 0.5),
-		Position = U2s(0.95, 0.5),
-		Size = U2n(0, 18, 0, 18),
-		BackgroundTransparency = 1,
-		Image = "rbxassetid://6031154871",
-		ImageColor3 = Theme.TextColor,
-		Parent = SearchContainer
-	})
-
-	local SearchInputFrame = Create("TextBox", {
-		Size = U2s(0.75, 0.9),
-		Position = U2s(0.05, 0.05),
-		BackgroundTransparency = 1,
-		PlaceholderText = "Search...", Text = "",
-		TextColor3 = Theme.TextColor,
-		TextScaled = true,
-		TextXAlignment = EnumAlignX,
-		ClearTextOnFocus = false,
-		Visible = false,
-		Parent = SearchContainer
-	})
-
-	local InteractionBlocker = Create("TextButton", {
-		Size = U2s(1, 1),
-		BackgroundTransparency = 1,
-		Text = "",
-		Visible = false,
-		ZIndex = 9999,
-		Parent = Frame
-	})
-
-	local ContentClipper = Create("Frame", {
-		Size = U2s(1, 1),
-		BackgroundTransparency = 1,
-		ClipsDescendants = true,
-		Parent = Frame,
-		Create("UICorner", {CornerRadius = Layout.WindowCorner})
-	})
-
-	local Header = Create("Frame", { 
-		Size = U2s(1, 0.125),
-		Position = U2s(0, -0.15),
-		BackgroundColor3 = Theme.AccentColor,
-		BackgroundTransparency = 1,
-		Active = true,
-		Parent = ContentClipper,
-		Create("UICorner", {CornerRadius = Layout.WindowCorner}) 
-	})
-
-	local HeaderLine = Create("Frame", {
-		Size = U2n(1, 0, 0, 1),
-		Position = U2n(0, 0, 1, 0),
-		BackgroundColor3 = Theme.BorderColor,
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		Parent = Header,
-		Create("UIGradient", {
-			Transparency = NumberSequence.new({
-				NumberSequenceKeypoint.new(0, 1),
-				NumberSequenceKeypoint.new(0.5, 0),
-				NumberSequenceKeypoint.new(1, 1)
-			})
-		})
-	})
-
-	MakeDraggable(Header, Frame)
+	local Header, titleLbl = SetupHeader(Frame, title)
 
 	local SidebarToggleBtn = Create("TextButton", {
 		Size = U2s(0.06, 1),
@@ -3509,7 +3426,6 @@ function kailex:createFrame(title, buttontxt)
 
 	task.wait(0.2)
 	TweenService:Create(Header, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = U2s(0, 0), BackgroundTransparency = Theme.Transparency}):Play()
-	TweenService:Create(HeaderLine, TweenInfo.new(0.6), {BackgroundTransparency = 0}):Play()
 
 	task.wait(0.15)
 	TweenService:Create(SidebarToggleBtn, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
@@ -3805,7 +3721,7 @@ function kailex:createFrame(title, buttontxt)
 	end
 
 	local function ApplySearchFilter()
-		local query = lower(SearchInputFrame.Text)
+		local query = string.lower(SearchInputFrame.Text)
 		if not currentTab then return end
 		if not SearchCache[currentTab] or #SearchCache[currentTab] == 0 then UpdateSearchCache() end
 		local isEmpty = query == ""
@@ -3818,13 +3734,13 @@ function kailex:createFrame(title, buttontxt)
 				if data.isSep then
 					if el.Visible ~= isEmpty then el.Visible = isEmpty end
 				else
-					local match = isEmpty or find(data.text, query, 1, true) ~= nil
+					local match = isEmpty or string.find(data.text, query, 1, true) ~= nil
 					if match and not el.Visible then
 						el.Visible = true
 						el.Size = data.origSize
 					elseif not match and el.Visible then
 						el.Visible = false
-						el.Size = udim2_new(data.origSize.X.Scale, data.origSize.X.Offset, 0, 0)
+						el.Size = U2n(data.origSize.X.Scale, data.origSize.X.Offset, 0, 0)
 					end
 				end
 				if i % 15 == 0 then task.wait() end
@@ -4179,7 +4095,7 @@ function kailex:createFrame(title, buttontxt)
 			local LoadBar = Create("Frame", {
 				Size = U2s(0, 1), BackgroundColor3 = Theme.Toggle.ToggleOnColor, Parent = LoadGui,
 				Create("UICorner", { CornerRadius = UDim.new(1, 0) }),
-				Create("UIGradient", { Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, C3r(255, 255, 255)), ColorSequenceKeypoint.new(1, Theme.Toggle.ToggleOnColor) }) })
+				Create("UIGradient", { Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, CRGB(255, 255, 255)), ColorSequenceKeypoint.new(1, Theme.Toggle.ToggleOnColor) }) })
 			})
 
 			local LoadTxt = Create("TextLabel", {
