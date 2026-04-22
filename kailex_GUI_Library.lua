@@ -36,28 +36,33 @@ local EnumMouseMove = Enum.UserInputType.MouseMovement
 -- // ========================================== //
 
 local Maid = {}
+Maid.ClassName = "Maid"
 Maid.__index = Maid
 
 function Maid.new()
 	return setmetatable({
-		_tasks = {}
+		_tasks = {},
+		_isCleaned = false
 	}, Maid)
+end
+
+local function SafeClean(cleaner, task)
+	pcall(function() cleaner(task) end)
 end
 
 local function CleanTask(task)
 	local taskType = typeof(task)
 
 	if taskType == "function" then
-		task()
+		pcall(task)
 	elseif taskType == "RBXScriptConnection" then
 		task:Disconnect()
 	elseif taskType == "Instance" then
-		task:Destroy()
+		SafeClean(game.Destroy, task)
 	elseif taskType == "table" or taskType == "userdata" then
 		local cleanerMethod = task.Destroy or task.Disconnect or task.DoCleaning or task.Remove or task.Stop or task.Close
-
 		if type(cleanerMethod) == "function" then
-			cleanerMethod(task)
+			SafeClean(cleanerMethod, task)
 		end
 	end
 end
@@ -77,18 +82,30 @@ function Maid:__newindex(key, task)
 end
 
 function Maid:GiveTask(task)
-	if not task then return task end
+	if not task or self._isCleaned then return task end
 	table.insert(self._tasks, task)
 	return task
 end
 
+function Maid:LinkToInstance(instance)
+	if typeof(instance) ~= "Instance" then return end
+	self:GiveTask(instance.Destroying:Connect(function()
+		self:DoCleaning()
+	end))
+	return self
+end
+
 function Maid:DoCleaning()
+	if self._isCleaned then return end
+	self._isCleaned = true
+
 	local tasks = self._tasks
 	for key, task in pairs(tasks) do
 		CleanTask(task)
 		tasks[key] = nil
 	end
 	table.clear(self._tasks)
+	self._isCleaned = false
 end
 
 function Maid:Destroy()
@@ -828,11 +845,7 @@ local function CreateElementBase(parent, name, hasLabel)
 	end
 
 	local elementMaid = Maid.new()
-	GlobalMaid:GiveTask(elementMaid)
-
-	elementMaid:GiveTask(base.Destroying:Connect(function()
-		elementMaid:DoCleaning()
-	end))
+	elementMaid:LinkToInstance(base)
 
 	return base, elementMaid, label
 end
@@ -1528,7 +1541,7 @@ function UIClasses.Button.new(parent, name, info, callback, extraButtonsData, ri
 	AttachExtraButtons(wrapperFrame, extraButtonsData)
 	local infoHandler = HandleInfo(baseFrame, info)
 	local buttonMaid = Maid.new()
-	GlobalMaid:GiveTask(buttonMaid)
+	buttonMaid:LinkToInstance(wrapperFrame)
 
 	local self = setmetatable(UIClasses.Base.new(wrapperFrame, buttonMaid, infoHandler), UIClasses.Button)
 	self.Btn = btn
@@ -1586,7 +1599,7 @@ function UIClasses.Toggle.new(parent, name, info, callback, defaultVal, style)
 	local tApi, tBtn, doToggle = SetupToggle(baseFrame, defaultVal, style)
 	local infoHandler = HandleInfo(baseFrame, info)
 	local toggleMaid = Maid.new()
-	GlobalMaid:GiveTask(toggleMaid)
+	toggleMaid:LinkToInstance(baseFrame)
 
 	local self = setmetatable(UIClasses.Base.new(baseFrame, toggleMaid, infoHandler), UIClasses.Toggle)
 	self.Name = name
@@ -2402,7 +2415,7 @@ local function BuildComponents(compTable, parent, prnt2)
 		})
 
 		local dsMaid = Maid.new()
-		GlobalMaid:GiveTask(dsMaid)
+		dsMaid:LinkToInstance(sectionOuter)
 
 		AttachExtraButtons(headerWrapper, (function() 
 			local e = {} 
@@ -2533,7 +2546,7 @@ local function BuildComponents(compTable, parent, prnt2)
 
 		local infoHandler = HandleInfo(baseFrame, Info)
 		local fbMaid = Maid.new()
-		GlobalMaid:GiveTask(fbMaid)
+		fbMaid:LinkToInstance(baseFrame)
 
 		fbMaid:GiveTask(btn.MouseButton1Click:Connect(function() 
 			ApplyRipple(btn)
@@ -2620,7 +2633,7 @@ local function BuildComponents(compTable, parent, prnt2)
 
 		local infoHandler = HandleInfo(baseFrame, info)
 		local tbMaid = Maid.new()
-		GlobalMaid:GiveTask(tbMaid)
+		tbMaid:LinkToInstance(baseFrame)
 		local isProg = false
 
 		if live then 
@@ -2932,7 +2945,7 @@ local function BuildComponents(compTable, parent, prnt2)
 		end
 
 		local cpMaid = Maid.new()
-		GlobalMaid:GiveTask(cpMaid)
+		cpMaid:LinkToInstance(baseFrame)
 
 		local function TogglePicker() 
 			expanded = not expanded
@@ -3132,7 +3145,7 @@ local function BuildComponents(compTable, parent, prnt2)
 
 		local infoHandler = HandleInfo(baseFrame, info)
 		local kbMaid = Maid.new()
-		GlobalMaid:GiveTask(kbMaid)
+		kbMaid:LinkToInstance(baseFrame)
 
 		kbMaid:GiveTask(bindBtn.MouseButton1Click:Connect(function() 
 			isBinding = true
@@ -3339,7 +3352,7 @@ local function BuildComponents(compTable, parent, prnt2)
 		end
 
 		local rMaid = Maid.new()
-		GlobalMaid:GiveTask(rMaid)
+		rMaid:LinkToInstance(rowFrame)
 
 		rMaid:GiveTask(rowFrame.ChildAdded:Connect(UpdateRow))
 		rMaid:GiveTask(rowFrame.ChildRemoved:Connect(UpdateRow))
