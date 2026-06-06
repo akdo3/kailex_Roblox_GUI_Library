@@ -36,7 +36,6 @@ local EnumMouseMove = Enum.UserInputType.MouseMovement
 -- // ========================================== //
 
 local Maid = {}
-Maid.ClassName = "Maid"
 Maid.__index = Maid
 
 function Maid.new()
@@ -256,27 +255,17 @@ local SaveManager = {
 	SaveDelay = 1.5
 }
 
-function SaveManager:Init()
-	if not isfolder(self.Folder) then pcall(makefolder, self.Folder) end
-	local path = self.Folder .. "/" .. self.ConfigName
-	if isfile(path) then
-		local s, res = pcall(function() return HttpService:JSONDecode(readfile(path)) end)
-		if s and type(res) == "table" then self.Data = res end
-	end
+if not isfolder(SaveManager.Folder) then
+	pcall(makefolder, SaveManager.Folder)
 end
 
-function SaveManager:Save()
-	if not kailex.Setting.AutoSave then return end
-
-	if self._saveThread then
-		task.cancel(self._saveThread)
-	end
-
-	self._saveThread = task.delay(self.SaveDelay, function()
-		local path = self.Folder .. "/" .. self.ConfigName
-		pcall(function() writefile(path, HttpService:JSONEncode(self.Data)) end)
-		self._saveThread = nil
+local path = SaveManager.Folder .. "/" .. SaveManager.ConfigName
+if isfile(path) then
+	local s, res = pcall(function()
+		return HttpService:JSONDecode(readfile(path))
 	end)
+
+	if s and type(res) == "table" then SaveManager.Data = res end
 end
 
 function SaveManager:Set(key, value)
@@ -284,15 +273,27 @@ function SaveManager:Set(key, value)
 
 	self.Data[key] = value 
 
-	self:Save()
+	if not kailex.Setting.AutoSave then return end
+
+	if self._saveThread then
+		task.cancel(self._saveThread)
+	end
+
+	self._saveThread = task.delay(self.SaveDelay, function()
+		pcall(function()
+			writefile(self.Folder .. "/" .. self.ConfigName, HttpService:JSONEncode(self.Data))
+		end)
+
+		self._saveThread = nil
+	end)
 end
 
 function SaveManager:Get(key, default)
-	if self.Data[key] ~= nil then return self.Data[key] end
+	if self.Data[key] ~= nil then
+		return self.Data[key]
+	end
 	return default
 end
-
-SaveManager:Init()
 
 local function ApplyShadow(target, intensity, size)
 	local shadow = Create("ImageLabel", {
@@ -315,16 +316,24 @@ end
 local function MakeDraggable(el, tgt)
 	local dragging, dragInput, mousePos, framePos
 	local dragConnection
+	local isMoving = false
 
 	GlobalMaid:GiveTask(el.InputBegan:Connect(function(input)
 		if input.UserInputType == EnumMouse1 or input.UserInputType == EnumTouch then
 			dragging = true
+			isMoving = false
 			mousePos = input.Position
 			framePos = tgt.Position
 
 			dragConnection = UserInputService.InputChanged:Connect(function(changedInput)
 				if changedInput.UserInputType == EnumMouseMove or changedInput.UserInputType == EnumTouch then
 					local delta = changedInput.Position - mousePos
+
+					if delta.Magnitude > 5 then
+						isMoving = true
+						el:SetAttribute("DragActive", true)
+					end
+
 					local targetPos = UDim2.new(
 						framePos.X.Scale, framePos.X.Offset + delta.X,
 						framePos.Y.Scale, framePos.Y.Offset + delta.Y
@@ -343,6 +352,15 @@ local function MakeDraggable(el, tgt)
 			if dragConnection then
 				dragConnection:Disconnect()
 				dragConnection = nil
+			end
+
+			if isMoving then
+				task.spawn(function()
+					task.wait()
+					el:SetAttribute("DragActive", nil)
+				end)
+			else
+				el:SetAttribute("DragActive", nil)
 			end
 		end
 	end))
@@ -1195,73 +1213,117 @@ local function AttachExtraButtons(wrapperFrame, extraButtonsData)
 		end
 	end
 end
+local ActiveWidgets = {}
 
 local function CreateQuickWidget(name, cType, callback, initialState)
+	if ActiveWidgets[name] then return ActiveWidgets[name] end
+
 	local WidgetContainer = Create("Frame", {
 		Size = UDim2.fromOffset(45, 45),
 		Position = UDim2.fromScale(0.5, 0.5),
-		AnchorPoint = Vector2.new(0.5, 0.5),
 		BackgroundColor3 = Theme.BackgroundColor,
-		BackgroundTransparency = 0.1,
 		Active = true,
-		ZIndex = 9999,
 		Parent = ScreenGui,
 		Create("UICorner", { CornerRadius = UDim.new(0.3, 0) }),
 		Create("UIStroke", { Thickness = 1.5, Color = Theme.BorderColor })
 	})
-	ApplyShadow(WidgetContainer, 0.4, 30)
-	MakeDraggable(WidgetContainer, WidgetContainer)
+
+	ActiveWidgets[name] = WidgetContainer
 
 	local ActionBtn = Create("TextButton", {
-		Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
-		Text = (cType == "Toggle" and "") or string.sub(name, 1, 3),
-		Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Theme.TextColor,
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Text = name,
+		Font = Enum.Font.GothamBold,
+		TextScaled = true,
+		TextColor3 = Theme.TextColor,
 		Parent = WidgetContainer
 	})
 
 	local CloseBtn = Create("TextButton", {
-		Size = UDim2.fromOffset(16, 16), Position = UDim2.fromOffset(-5, -5), BackgroundColor3 = Theme.ErrorColor,
-		Text = "X", Font = Enum.Font.GothamBold, TextSize = 10, TextColor3 = Color3.fromRGB(255,255,255),
-		ZIndex = 10000, Parent = WidgetContainer, Create("UICorner", { CornerRadius = UDim.new(1, 0) })
+		Size = UDim2.fromOffset(16, 16),
+		Position = UDim2.fromOffset(-5, -5),
+		BackgroundColor3 = Theme.ErrorColor,
+		Text = "X",
+		Font = Enum.Font.GothamBold,
+		TextSize = 10,
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		Parent = WidgetContainer,
+		Create("UICorner", { CornerRadius = UDim.new(1, 0) })
 	})
 
+	ApplyShadow(WidgetContainer, 0.4, 30)
+	MakeDraggable(ActionBtn, WidgetContainer)
+
 	local toggleState = initialState or false
+
 	local function updateVisuals()
 		if cType == "Toggle" then
-			PlayTween(WidgetContainer, TweenInfo.new(0.3), { BackgroundColor3 = toggleState and Theme.Toggle.ToggleOnColor or Theme.BackgroundColor })
-			ActionBtn.Text = toggleState and "ON" or "OFF"
+			local targetColor = toggleState and Theme.Toggle.ToggleOnColor or Theme.BackgroundColor
+			PlayTween(WidgetContainer, TweenInfo.new(0.3), { BackgroundColor3 = targetColor })
 		end
 	end
+
 	updateVisuals()
 
 	GlobalMaid:GiveTask(ActionBtn.MouseButton1Click:Connect(function()
+		if ActionBtn:GetAttribute("DragActive") then return end
+
 		PlayInteractSound()
-		if cType == "Toggle" then toggleState = not toggleState updateVisuals() callback(toggleState)
-		else callback() end
 		ApplyRipple(ActionBtn)
+
+		if cType == "Toggle" then
+			toggleState = not toggleState
+			updateVisuals()
+			callback(toggleState)
+		else
+			callback()
+		end
 	end))
 
 	GlobalMaid:GiveTask(CloseBtn.MouseButton1Click:Connect(function()
-		PlayTween(WidgetContainer, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), { Size = UDim2.fromOffset(0,0) }, function() WidgetContainer:Destroy() end)
+		if ActiveWidgets[name] == WidgetContainer then
+			ActiveWidgets[name] = nil
+		end
+		PlayTween(WidgetContainer, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), { Size = UDim2.fromOffset(0, 0) }, function()
+			WidgetContainer:Destroy()
+		end)
 	end))
 
-	WidgetContainer.Size = UDim2.fromOffset(0,0)
+	WidgetContainer.Size = UDim2.fromOffset(0, 0)
 	PlayTween(WidgetContainer, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Size = UDim2.fromOffset(45, 45) })
+
 	return WidgetContainer
 end
 
 local function AddPinButton(parentFrame, name, cType, callback, initialState)
 	if not kailex.Setting.QuickWidgets then return end
+
 	local PinBtn = Create("ImageButton", {
-		Size = UDim2.fromScale(0.08, 0.6), Position = UDim2.fromScale(0.02, 0.2), AnchorPoint = Vector2.new(0, 0),
-		BackgroundTransparency = 1, Image = "rbxassetid://6031082533",
-		ImageColor3 = Theme.TextColor, ImageTransparency = 0.5, Parent = parentFrame, ZIndex = 10
+		Size = UDim2.fromOffset(22, 18),
+		Position = UDim2.fromScale(0.02, 0.2),
+		BackgroundTransparency = 1,
+		Image = "rbxassetid://6031082533",
+		ImageColor3 = Theme.TextColor,
+		Parent = parentFrame,
 	})
+
 	ApplyHover(PinBtn, PinBtn, Theme.Toggle.ToggleOnColor, Theme.TextColor)
+
 	GlobalMaid:GiveTask(PinBtn.MouseButton1Click:Connect(function()
 		PlayInteractSound()
-		CreateQuickWidget(name, cType, callback, initialState)
+
+		if ActiveWidgets[name] then
+			local targetWidget = ActiveWidgets[name]
+			ActiveWidgets[name] = nil
+			PlayTween(targetWidget, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), { Size = UDim2.fromOffset(0, 0) }, function()
+				targetWidget:Destroy()
+			end)
+		else
+			CreateQuickWidget(name, cType, callback, initialState)
+		end
 	end))
+
 	return PinBtn
 end
 
