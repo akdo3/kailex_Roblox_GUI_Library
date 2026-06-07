@@ -2495,7 +2495,8 @@ local function BuildComponents(compTable, parent, prnt2)
 		local contentWrapper = Create("Frame", {
 			Size = UDim2.new(1, 0, 0, 0), 
 			BackgroundTransparency = 1, 
-			ClipsDescendants = true, 
+			ClipsDescendants = true,
+			Visible = expanded,
 			Parent = sectionOuter
 		})
 
