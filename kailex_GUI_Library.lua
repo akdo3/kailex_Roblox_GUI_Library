@@ -1296,7 +1296,7 @@ local function CreateQuickWidget(name, cType, callback, initialState)
 	return WidgetContainer
 end
 
-local function AddPinButton(parentFrame, name, cType, callback, initialState)
+function AddPinButton(parentFrame, name, cType, callback, initialState)
 	if not kailex.Setting.QuickWidgets then return end
 
 	local PinBtn = Create("ImageButton", {
@@ -1331,7 +1331,7 @@ end
 --  //        COMPONENTS OOP ARCHITECTURE         //
 -- // ========================================== //
 
-local function getArgs(...) 
+function getArgs(...) 
 	if Setting.Info then 
 		return ... 
 	else 
@@ -1339,7 +1339,7 @@ local function getArgs(...)
 	end 
 end
 
-local function AnimateDropdown(list, icon, expanded, count, rowCount)
+function AnimateDropdown(list, icon, expanded, count, rowCount)
 	PlayTween(icon, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Rotation = expanded and 180 or 0
 	})
@@ -1397,7 +1397,7 @@ local function AnimateDropdown(list, icon, expanded, count, rowCount)
 	end
 end
 
-local function SetupToggle(parentFrame, defaultVal, style)
+function SetupToggle(parentFrame, defaultVal, style)
 	local toggled = defaultVal or false
 	local rad = style and UDim.new(0.3, 0) or UDim.new(1, 0)
 	local tTheme = Theme.Toggle
@@ -1949,7 +1949,7 @@ end
 UIClasses.Dropdown = setmetatable({}, UIClasses.Base)
 UIClasses.Dropdown.__index = UIClasses.Dropdown
 
-function UIClasses.Dropdown.new(parent, prnt2, name, info, items, perRow, callback, defaultVal, dSize, dPos)
+function UIClasses.Dropdown.new(parent, name, info, items, perRow, callback, defaultVal, dSize, dPos)
 	local selected = SaveManager:Get(name, defaultVal)
 	local name =  selected and (name .. ": " .. tostring(selected)) or (name or "Dropdown")
 	local baseFrame, dropdownMaid, btn = CreateElementBase(parent, name)
@@ -1972,7 +1972,7 @@ function UIClasses.Dropdown.new(parent, prnt2, name, info, items, perRow, callba
 		ScrollingDirection = Enum.ScrollingDirection.Y,
 		Visible = false, 
 		ScrollBarThickness = 3, 
-		Parent = prnt2 or parent,
+		Parent = parent,
 		Create("UICorner", {
 			CornerRadius = Layout.ElementCorner
 		}), 
@@ -2138,7 +2138,7 @@ function UIClasses.Dropdown:Visible(state)
 end
 
 local TabContentScroll
-local function BuildComponents(compTable, parent, prnt2)
+local function BuildComponents(compTable, parent)
 
 	function compTable:addButton(name, ...)
 		local args = {...}
@@ -2172,7 +2172,7 @@ local function BuildComponents(compTable, parent, prnt2)
 
 	function compTable:addDropdown(name, ...)
 		local info, items, perRow, callback, defaultVal = getArgs(...)
-		return UIClasses.Dropdown.new(parent, prnt2, name, info, items, perRow, callback, defaultVal)
+		return UIClasses.Dropdown.new(parent, name, info, items, perRow, callback, defaultVal)
 	end
 
 	function compTable:addMultiDropdown(name, ...)
@@ -2221,7 +2221,7 @@ local function BuildComponents(compTable, parent, prnt2)
 			CanvasSize = UDim2.fromOffset(0, 0),
 			Visible = false, 
 			ScrollBarThickness = 3, 
-			Parent = prnt2 or parent, 
+			Parent = parent, 
 			Create("UICorner", {
 				CornerRadius = Layout.ElementCorner
 			}), 
@@ -2545,7 +2545,7 @@ local function BuildComponents(compTable, parent, prnt2)
 			sectionOuter.Visible = s ~= nil and s or not sectionOuter.Visible
 		end
 
-		BuildComponents(api, innerContent, prnt2)
+		BuildComponents(api, innerContent)
 		if expanded then 
 			task.defer(function() 
 				contentWrapper.Size = UDim2.new(1, 0, 0, iCUILL.AbsoluteContentSize.Y + 8) 
@@ -2622,7 +2622,7 @@ local function BuildComponents(compTable, parent, prnt2)
 			baseFrame:Destroy() 
 		end
 
-		BuildComponents(api, contentFrame, prnt2) 
+		BuildComponents(api, contentFrame) 
 		return api
 	end
 
@@ -2787,7 +2787,7 @@ local function BuildComponents(compTable, parent, prnt2)
 			Size = UDim2.new(1, 0, 0, 150), 
 			GroupTransparency = 1, 
 			Visible = false, 
-			Parent = prnt2 or parent, 
+			Parent = parent, 
 			Create("UICorner", {
 				CornerRadius = Layout.ElementCorner
 			}), 
@@ -3325,7 +3325,7 @@ local function BuildComponents(compTable, parent, prnt2)
 		local dVal = defaultDrop
 		local tVal = defaultToggle or false
 
-		local api = UIClasses.Dropdown.new(parent, prnt2, name, info, items, perRow, function(v) 
+		local api = UIClasses.Dropdown.new(parent, name, info, items, perRow, function(v) 
 			dVal = v
 			cb(dVal, tVal) 
 		end, defaultDrop, UDim2.new(1, -110, 1, 0), UDim2.new(1, -90, 0, 0))
@@ -3427,7 +3427,7 @@ local function BuildComponents(compTable, parent, prnt2)
 			rowFrame:Destroy() 
 		end
 
-		BuildComponents(api, rowFrame, prnt2) 
+		BuildComponents(api, rowFrame) 
 		return api
 	end
 
