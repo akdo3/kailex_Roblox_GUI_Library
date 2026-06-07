@@ -1596,6 +1596,10 @@ function UIClasses.Button.new(parent, name, info, callback, extraButtonsData, ri
 	return self
 end
 
+function UIClasses.Button:ChangeTxtCol(Col)
+	self.Btn.TextColor3 = Col
+end
+
 function UIClasses.Button:updatename(n) 
 	self.Btn.Text = n 
 end
