@@ -819,52 +819,6 @@ function GetAdaptiveSize(scaleX, scaleY)
 	)
 end
 
-function CreateElementBase(parent, name)
-	local base = Create("Frame", {
-		Size = Layout.ButtonSize,
-		BackgroundColor3 = Theme.ButtonColor,
-		BackgroundTransparency = Theme.Transparency + 0.2,
-		Parent = parent,
-		Create("UICorner", {
-			CornerRadius = Layout.ElementCorner
-		}),
-		Create("UIStroke", {
-			Thickness = 1.2,
-			Color = Theme.BorderColor,
-			Transparency = 0.6
-		}),
-		Create("UIPadding", {
-			PaddingLeft = UDim.new(0, 8),
-			PaddingRight = UDim.new(0, 8)
-		}),
-		Create("UIListLayout", {
-			Padding = UDim.new(0, 8),
-			FillDirection = EnumFill,
-			VerticalAlignment = EnumAlignY,
-			SortOrder = EnumSort,
-		})
-	})
-
-	local TxtBtn = Create("TextButton", {
-		Size = UDim2.fromScale(0.6, 1),
-		BackgroundTransparency = 1,
-		Text = name or "No Name",
-		TextColor3 = Theme.TextColor,
-		TextScaled = true,
-		TextXAlignment = EnumAlignX,
-		AutoButtonColor = false,
-		Parent = base,
-		Create("UIFlexItem", {
-			FlexMode = Enum.UIFlexMode.Fill
-		})
-	})
-
-	local elementMaid = Maid.new()
-	elementMaid:LinkToInstance(base)
-
-	return base, elementMaid, TxtBtn
-end
-
 local ToolTipFrame = Create("Frame", {
 	BackgroundColor3 = Theme.AccentColor, 
 	BackgroundTransparency = 0.15, 
@@ -929,6 +883,96 @@ local function HideInfo()
 		toolTipConn:Disconnect() 
 		toolTipConn = nil 
 	end 
+end
+
+local function HandleInfo(parentFrame, info)
+	local api, icon = {}, nil
+	function api:Update(newInfo)
+		if newInfo and newInfo ~= "" then
+			if not icon then 
+				icon = Create("ImageButton", {
+					BackgroundTransparency = 1, 
+					Position = InfoImage.InfoImagePOS, 
+					Size = InfoImage.ImageSize, 
+					Image = InfoImage.InfoImageId, 
+					ImageColor3 = Theme.TextColor, 
+					ZIndex = parentFrame.ZIndex + 1, 
+					Parent = parentFrame
+				})
+
+				GlobalMaid:GiveTask(icon.MouseButton1Click:Connect(function() 
+					if ToolTipFrame.Visible then
+						HideInfo()
+					else 
+						ShowInfo(newInfo)
+					end 
+				end)) 
+			end
+		elseif icon then
+			icon:Destroy()
+			icon = nil
+		end
+	end
+
+	function api:Destroy()
+		if icon then
+			icon:Destroy()
+		end
+	end
+
+	api:Update(info)
+	return api
+end
+
+function CreateElementBase(parent, name, Info)
+	local base = Create("Frame", {
+		Size = Layout.ButtonSize,
+		BackgroundColor3 = Theme.ButtonColor,
+		BackgroundTransparency = Theme.Transparency + 0.2,
+		Parent = parent,
+		Create("UICorner", {
+			CornerRadius = Layout.ElementCorner
+		}),
+		Create("UIStroke", {
+			Thickness = 1.2,
+			Color = Theme.BorderColor,
+			Transparency = 0.6
+		}),
+		Create("UIPadding", {
+			PaddingLeft = UDim.new(0, 8),
+			PaddingRight = UDim.new(0, 8)
+		}),
+		Create("UIListLayout", {
+			Padding = UDim.new(0, 8),
+			FillDirection = EnumFill,
+			VerticalAlignment = EnumAlignY,
+			SortOrder = EnumSort,
+		})
+	})
+
+	local TxtBtn = Create("TextButton", {
+		Size = UDim2.fromScale(0.6, 1),
+		BackgroundTransparency = 1,
+		Text = name or "No Name",
+		TextColor3 = Theme.TextColor,
+		TextScaled = true,
+		TextXAlignment = EnumAlignX,
+		AutoButtonColor = false,
+		Parent = base,
+		Create("UIFlexItem", {
+			FlexMode = Enum.UIFlexMode.Fill
+		})
+	})
+
+	local InfoHandel
+	if Info then
+		InfoHandel = HandleInfo(base, Info)
+	end
+
+	local elementMaid = Maid.new()
+	elementMaid:LinkToInstance(base)
+
+	return base, elementMaid, TxtBtn, InfoHandel
 end
 
 local NotificationFrame = Create("Frame", {
@@ -1117,45 +1161,6 @@ function kailex:MakeLoadingScreen(text, delay, callback)
 			if callback then callback() end
 		end)
 	end)
-end
-
-local function HandleInfo(parentFrame, info)
-	local api, icon = {}, nil
-	function api:Update(newInfo)
-		if newInfo and newInfo ~= "" then
-			if not icon then 
-				icon = Create("ImageButton", {
-					BackgroundTransparency = 1, 
-					Position = InfoImage.InfoImagePOS, 
-					Size = InfoImage.ImageSize, 
-					Image = InfoImage.InfoImageId, 
-					ImageColor3 = Theme.TextColor, 
-					ZIndex = parentFrame.ZIndex + 1, 
-					Parent = parentFrame
-				})
-
-				GlobalMaid:GiveTask(icon.MouseButton1Click:Connect(function() 
-					if ToolTipFrame.Visible then
-						HideInfo()
-					else 
-						ShowInfo(newInfo)
-					end 
-				end)) 
-			end
-		elseif icon then
-			icon:Destroy()
-			icon = nil
-		end
-	end
-
-	function api:Destroy()
-		if icon then
-			icon:Destroy()
-		end
-	end
-
-	api:Update(info)
-	return api
 end
 
 local function BindBaseAPI(api, baseFrame, infoHandler, extraCleanup)
@@ -1544,15 +1549,15 @@ function UIClasses.Button.new(parent, name, info, callback, extraButtonsData, ri
 		Size = Layout.ButtonSize, 
 		Parent = parent,
 		Create("UIListLayout", {
-			Padding = UDim.new(0, 8), 
-			FillDirection = EnumFill, 
+			Padding = UDim.new(0, 8),
+			FillDirection = EnumFill,
 			SortOrder = EnumSort,
 			HorizontalFlex = Enum.UIFlexAlignment.Fill,
 			VerticalAlignment = EnumAlignY
 		})
 	})
 
-	local baseFrame, BtnMain, Btn = CreateElementBase(wrapperFrame, name)
+	local baseFrame, BtnMain, Btn, BtnInfo = CreateElementBase(wrapperFrame, name, info)
 
 	local imgBtn
 	if rightIcon then
@@ -1566,9 +1571,8 @@ function UIClasses.Button.new(parent, name, info, callback, extraButtonsData, ri
 	end
 
 	AttachExtraButtons(wrapperFrame, extraButtonsData)
-	local infoHandler = HandleInfo(baseFrame, info)
 
-	local self = setmetatable(UIClasses.Base.new(wrapperFrame, BtnMain, infoHandler), UIClasses.Button)
+	local self = setmetatable(UIClasses.Base.new(wrapperFrame, BtnMain, BtnInfo), UIClasses.Button)
 	self.Btn = Btn
 	self.Callback = callback or function() end
 	self.ClearHover = ApplyHover(Btn, baseFrame, Theme.AccentColor, Theme.ButtonColor)
@@ -1613,20 +1617,17 @@ end
 UIClasses.Toggle = setmetatable({}, UIClasses.Base)
 UIClasses.Toggle.__index = UIClasses.Toggle
 
-function UIClasses.Toggle.new(parent, name, info, callback, defaultVal, style)
+function UIClasses.Toggle.new(parent, name, Info, callback, defaultVal, style)
 	defaultVal = SaveManager:Get(name, defaultVal or false)
-	local baseFrame, _, btn = CreateElementBase(parent, name or "Toggle")
+	local baseFrame, ToggleMaid, btn, ToggleInfo = CreateElementBase(parent, name or "Toggle", Info)
 
 	if kailex.Setting.QuickWidgets then 
 		btn.Position = UDim2.new(0.1, 0, 0, 0) 
 	end
 
 	local tApi, tBtn, doToggle = SetupToggle(baseFrame, defaultVal, style)
-	local infoHandler = HandleInfo(baseFrame, info)
-	local toggleMaid = Maid.new()
-	toggleMaid:LinkToInstance(baseFrame)
 
-	local self = setmetatable(UIClasses.Base.new(baseFrame, toggleMaid, infoHandler), UIClasses.Toggle)
+	local self = setmetatable(UIClasses.Base.new(baseFrame, ToggleMaid, ToggleInfo), UIClasses.Toggle)
 	self.Name = name
 	self.Btn = btn
 	self.Callback = callback or function() end
@@ -1694,9 +1695,9 @@ end
 UIClasses.Slider = setmetatable({}, UIClasses.Base)
 UIClasses.Slider.__index = UIClasses.Slider
 
-function UIClasses.Slider.new(parent, name, info, beginVal, minVal, maxVal, callback, tSize, trackSize)
+function UIClasses.Slider.new(parent, name, Info, beginVal, minVal, maxVal, callback, tSize, trackSize)
 	local currentVal = SaveManager:Get(name, beginVal)
-	local baseFrame, elementMaid, label = CreateElementBase(parent, name or "Slider")
+	local baseFrame, elementMaid, label, SliderInfo = CreateElementBase(parent, name or "Slider", Info)
 
 	local textBox = Create("TextBox", {
 		Size = UDim2.fromScale(0.1, 0.8), 
@@ -1761,9 +1762,7 @@ function UIClasses.Slider.new(parent, name, info, beginVal, minVal, maxVal, call
 		})
 	})
 
-	local infoHandler = HandleInfo(baseFrame, info)
-
-	local self = setmetatable(UIClasses.Base.new(baseFrame, elementMaid, infoHandler), UIClasses.Slider)
+	local self = setmetatable(UIClasses.Base.new(baseFrame, elementMaid, SliderInfo), UIClasses.Slider)
 	self.Name = name
 	self.Label = label
 	self.TextBox = textBox
@@ -1912,10 +1911,10 @@ end
 UIClasses.Dropdown = setmetatable({}, UIClasses.Base)
 UIClasses.Dropdown.__index = UIClasses.Dropdown
 
-function UIClasses.Dropdown.new(parent, name, info, items, perRow, callback, defaultVal, dSize, dPos)
+function UIClasses.Dropdown.new(parent, name, Info, items, perRow, callback, defaultVal, dSize, dPos)
 	local selected = SaveManager:Get(name, defaultVal)
 	local name =  selected and (name .. ": " .. tostring(selected)) or (name or "Dropdown")
-	local baseFrame, dropdownMaid, btn = CreateElementBase(parent, name)
+	local baseFrame, dropdownMaid, btn, DDInfo = CreateElementBase(parent, name, Info)
 
 	local iconBtn = Create("ImageButton", {
 		BackgroundTransparency = 1, 
@@ -1953,9 +1952,7 @@ function UIClasses.Dropdown.new(parent, name, info, items, perRow, callback, def
 		Parent = listFrame,
 	})
 
-	local infoHandler = HandleInfo(baseFrame, info)
-
-	local self = setmetatable(UIClasses.Base.new(baseFrame, dropdownMaid, infoHandler), UIClasses.Dropdown)
+	local self = setmetatable(UIClasses.Base.new(baseFrame, dropdownMaid, DDInfo), UIClasses.Dropdown)
 	self.Name = name
 	self.Btn = btn
 	self.IconBtn = iconBtn
@@ -2139,7 +2136,7 @@ local function BuildComponents(compTable, parent)
 	end
 
 	function compTable:addMultiDropdown(name, ...)
-		local info, items, perRow, callback, defaultVals = getArgs(...)
+		local Info, items, perRow, callback, defaultVals = getArgs(...)
 		local api = {}
 		local expanded = false
 		local selectedItems = {}
@@ -2161,7 +2158,7 @@ local function BuildComponents(compTable, parent)
 			return arr
 		end
 
-		local baseFrame, dropdownMaid, btn = CreateElementBase(parent, name or "Multi Dropdown")
+		local baseFrame, dropdownMaid, btn, MDInfo = CreateElementBase(parent, name or "Multi Dropdown", Info)
 
 		local iconBtn = Create("ImageButton", {
 			BackgroundTransparency = 1, 
@@ -2171,8 +2168,6 @@ local function BuildComponents(compTable, parent)
 			ImageColor3 = Theme.TextColor, 
 			Parent = baseFrame
 		})
-
-		local infoHandler = HandleInfo(baseFrame, info) 
 
 		local listFrame = Create("ScrollingFrame", {
 			BackgroundColor3 = Theme.BackgroundColor, 
@@ -2275,7 +2270,7 @@ local function BuildComponents(compTable, parent)
 		end
 
 		function api:newInfo(i) 
-			infoHandler:Update(i) 
+			MDInfo:Update(i) 
 		end
 
 		function api:newCallback(c) 
@@ -2319,7 +2314,7 @@ local function BuildComponents(compTable, parent)
 
 		function api:destroy() 
 			dropdownMaid:DoCleaning()
-			infoHandler:Destroy()
+			MDInfo:Destroy()
 			baseFrame:Destroy()
 			listFrame:Destroy() 
 		end
@@ -2533,7 +2528,7 @@ local function BuildComponents(compTable, parent)
 			})
 		})
 
-		local baseFrame, FBMaid, btn = CreateElementBase(parent, name or "Frame Button")
+		local baseFrame, FBMaid, btn, FBInfo = CreateElementBase(parent, name or "Frame Button", Info)
 
 		Create("TextLabel", {
 			BackgroundTransparency = 1, 
@@ -2544,8 +2539,6 @@ local function BuildComponents(compTable, parent)
 			TextScaled = true, 
 			Parent = baseFrame
 		})
-
-		local infoHandler = HandleInfo(baseFrame, Info)
 
 		FBMaid:GiveTask(btn.MouseButton1Click:Connect(function() 
 			ApplyRipple(btn)
@@ -2570,7 +2563,7 @@ local function BuildComponents(compTable, parent)
 
 		function api:updateFrameButton(n, i) 
 			btn.Text = n or name
-			infoHandler:Update(i) 
+			FBInfo:Update(i) 
 		end
 
 		function api:openFrame() 
@@ -2580,7 +2573,7 @@ local function BuildComponents(compTable, parent)
 
 		function api:destroy() 
 			FBMaid:DoCleaning()
-			infoHandler:Destroy()
+			FBInfo:Destroy()
 			contentFrame:Destroy()
 			baseFrame:Destroy() 
 		end
