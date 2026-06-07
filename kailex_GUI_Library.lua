@@ -2630,7 +2630,7 @@ local function BuildComponents(compTable, parent, prnt2)
 		local info, placeholder, callback, defaultVal, live = getArgs(...)
 		local api = {}
 		local cb = callback or function() end
-		local baseFrame, _, _ = CreateElementBase(parent, name)
+		local baseFrame, TBMaid, _ = CreateElementBase(parent, name or "Text Box")
 
 		local textBox = Create("TextBox", {
 			BackgroundColor3 = Theme.AccentColor, 
@@ -2652,16 +2652,14 @@ local function BuildComponents(compTable, parent, prnt2)
 		})
 
 		local infoHandler = HandleInfo(baseFrame, info)
-		local tbMaid = Maid.new()
-		tbMaid:LinkToInstance(baseFrame)
 		local isProg = false
 
 		if live then 
-			tbMaid:GiveTask(textBox:GetPropertyChangedSignal("Text"):Connect(function() 
+			TBMaid:GiveTask(textBox:GetPropertyChangedSignal("Text"):Connect(function() 
 				if not isProg then cb(textBox.Text) end 
 			end))
 		else 
-			tbMaid:GiveTask(textBox.FocusLost:Connect(function() 
+			TBMaid:GiveTask(textBox.FocusLost:Connect(function() 
 				cb(textBox.Text) 
 			end)) 
 		end
@@ -2678,7 +2676,7 @@ local function BuildComponents(compTable, parent, prnt2)
 		end
 
 		function api:destroy() 
-			tbMaid:DoCleaning()
+			TBMaid:DoCleaning()
 			infoHandler:Destroy()
 			baseFrame:Destroy() 
 		end
