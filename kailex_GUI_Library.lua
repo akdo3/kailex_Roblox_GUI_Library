@@ -1546,48 +1546,13 @@ function UIClasses.Button.new(parent, name, info, callback, extraButtonsData, ri
 		Create("UIListLayout", {
 			Padding = UDim.new(0, 8), 
 			FillDirection = EnumFill, 
-			SortOrder = EnumSort, 
+			SortOrder = EnumSort,
+			HorizontalFlex = Enum.UIFlexAlignment.Fill,
 			VerticalAlignment = EnumAlignY
 		})
 	})
 
-	local baseFrame = Create("Frame", {
-		Size = UDim2.new(1, 0, 1, 0), 
-		BackgroundColor3 = Theme.ButtonColor, 
-		BackgroundTransparency = Theme.Transparency + 0.2,
-		ClipsDescendants = true, 
-		Parent = wrapperFrame, 
-		GetCorner(), 
-		GetStroke(0.7),
-		Create("UIPadding", {
-			PaddingLeft = UDim.new(0.02, 0), 
-			PaddingRight = UDim.new(0.02, 0)
-		}),
-		Create("UIFlexItem", {
-			FlexMode = Enum.UIFlexMode.Fill
-		}),
-		Create("UIListLayout", {
-			Padding = UDim.new(0.02, 0), 
-			FillDirection = EnumFill, 
-			SortOrder = EnumSort, 
-			VerticalAlignment = EnumAlignY
-		})
-	})
-
-	local btn = Create("TextButton", {
-		BackgroundTransparency = 1, 
-		Size = TextSize.Full, 
-		Position = Layout.ButtonPOS,
-		Text = name or "Button", 
-		TextColor3 = Theme.TextColor, 
-		TextScaled = true, 
-		TextXAlignment = EnumAlignX, 
-		ZIndex = 2,
-		Parent = baseFrame, 
-		Create("UIFlexItem", {
-			FlexMode = Enum.UIFlexMode.Fill
-		})
-	})
+	local baseFrame, BtnMain, Btn = CreateElementBase(wrapperFrame, name)
 
 	local imgBtn
 	if rightIcon then
@@ -1602,21 +1567,19 @@ function UIClasses.Button.new(parent, name, info, callback, extraButtonsData, ri
 
 	AttachExtraButtons(wrapperFrame, extraButtonsData)
 	local infoHandler = HandleInfo(baseFrame, info)
-	local buttonMaid = Maid.new()
-	buttonMaid:LinkToInstance(wrapperFrame)
 
-	local self = setmetatable(UIClasses.Base.new(wrapperFrame, buttonMaid, infoHandler), UIClasses.Button)
-	self.Btn = btn
+	local self = setmetatable(UIClasses.Base.new(wrapperFrame, BtnMain, infoHandler), UIClasses.Button)
+	self.Btn = Btn
 	self.Callback = callback or function() end
-	self.ClearHover = ApplyHover(btn, baseFrame, Theme.AccentColor, Theme.ButtonColor)
+	self.ClearHover = ApplyHover(Btn, baseFrame, Theme.AccentColor, Theme.ButtonColor)
 
 	local function trigger()
-		ApplyRipple(btn)
+		ApplyRipple(Btn)
 		PlayInteractSound()
 		self.Callback()
 	end
 
-	self.Maid:GiveTask(btn.MouseButton1Click:Connect(trigger))
+	self.Maid:GiveTask(Btn.MouseButton1Click:Connect(trigger))
 
 	if imgBtn then 
 		self.Maid:GiveTask(imgBtn.MouseButton1Click:Connect(trigger)) 
