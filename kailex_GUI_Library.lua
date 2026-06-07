@@ -1699,7 +1699,7 @@ function UIClasses.Toggle.new(parent, name, info, callback, defaultVal, style)
 end
 
 function UIClasses.Toggle:setValue(s, silent) 
-	self.ToggleApi:setValue(s, silent, function(val)
+	self.ToggleApi:setTValue(s, silent, function(val)
 		SaveManager:Set(self.Name, val)
 		if not silent then 
 			self.Callback(val) 
