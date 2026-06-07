@@ -2166,6 +2166,7 @@ function UIClasses.Dropdown:Visible(state)
 	end
 end
 
+local TabContentScroll
 local function BuildComponents(compTable, parent, prnt2)
 
 	function compTable:addButton(name, ...)
@@ -2597,22 +2598,20 @@ local function BuildComponents(compTable, parent, prnt2)
 		return api
 	end
 
-	local TabsMap = {}
 	function compTable:addFrameButton(name, Info)
 		local api = {} 
 
-		local childContent = Create("Frame", {
+		local contentFrame = Create("Frame", {
 			Size = UDim2.fromScale(1, 1), 
-			BackgroundTransparency = 1, 
-			Visible = false, 
-			Parent = parent, 
+			BackgroundTransparency = 1,
+			Visible = false,
+			Parent = TabContentScroll, 
 			Create("UIListLayout", {
 				SortOrder = EnumSort, 
 				HorizontalAlignment = Enum.HorizontalAlignment.Center, 
 				Padding = UDim.new(0.007, 5)
 			})
 		})
-		TabsMap[#TabsMap + 1] = childContent 
 
 		local baseFrame = CreateElementBase(parent)
 
@@ -2644,14 +2643,12 @@ local function BuildComponents(compTable, parent, prnt2)
 		fbMaid:GiveTask(btn.MouseButton1Click:Connect(function() 
 			ApplyRipple(btn)
 			PlayInteractSound() 
-			for _, tb in pairs(TabsMap) do 
-				tb.Visible = false 
-			end
-			childContent.Visible = true
-			parent.CanvasPosition = Vector2.new(0, 0)
+
+			parent.Visible = false
+			contentFrame.Visible = true
 		end))
 
-		local backBase = CreateElementBase(childContent)
+		local backBase = CreateElementBase(contentFrame)
 		local backBtn = Create("TextButton", {
 			BackgroundTransparency = 1, 
 			Position = Layout.ButtonPOS, 
@@ -2666,11 +2663,9 @@ local function BuildComponents(compTable, parent, prnt2)
 		fbMaid:GiveTask(backBtn.MouseButton1Click:Connect(function() 
 			ApplyRipple(backBtn)
 			PlayInteractSound() 
-			for _, tb in pairs(TabsMap) do 
-				tb.Visible = false 
-			end
+
 			parent.Visible = true
-			parent.CanvasPosition = Vector2.new(0, 0)
+			contentFrame.Visible = false
 		end))
 
 		ApplyHover(btn, baseFrame, Theme.AccentColor, Theme.ButtonColor)
@@ -2682,20 +2677,18 @@ local function BuildComponents(compTable, parent, prnt2)
 		end
 
 		function api:openFrame() 
-			for _, tb in pairs(TabsMap) do 
-				tb.Visible = false 
-			end
-			childContent.Visible = true 
+			parent.Visible = false
+			contentFrame.Visible = true 
 		end
 
 		function api:destroy() 
 			fbMaid:DoCleaning()
 			infoHandler:Destroy()
-			childContent:Destroy()
+			contentFrame:Destroy()
 			baseFrame:Destroy() 
 		end
 
-		BuildComponents(api, childContent, prnt2) 
+		BuildComponents(api, contentFrame, prnt2) 
 		return api
 	end
 
@@ -3981,7 +3974,7 @@ function kailex:createFrame(title, buttontxt)
 		}),
 	})
 
-	local TabContentScroll = Create("ScrollingFrame", {
+	TabContentScroll = Create("ScrollingFrame", {
 		Size = UDim2.fromScale(0.88, 0.835), 
 		Position = UDim2.fromScale(0.11, 0.15), 
 		BackgroundTransparency = 1, 
