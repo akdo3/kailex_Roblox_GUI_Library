@@ -1184,6 +1184,7 @@ end
 local function AttachExtraButtons(wrapperFrame, extraButtonsData)
 	for _, btnData in ipairs(extraButtonsData) do
 		local bContent, bCb = btnData.content, btnData.cb
+
 		if type(bContent) == "string" and type(bCb) == "function" then
 			local isIcon = tonumber(bContent) or string.match(bContent, "rbxassetid://") or string.match(bContent, "http://")
 			local extraBtn = Create("TextButton", {
@@ -1197,6 +1198,7 @@ local function AttachExtraButtons(wrapperFrame, extraButtonsData)
 				Create("UICorner", {CornerRadius = Layout.ElementCorner}),
 				GetStroke(0.7, Enum.ApplyStrokeMode.Border)
 			})
+
 			if isIcon then
 				Create("ImageLabel", {
 					BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Position = UDim2.fromScale(0.2, 0.2),
@@ -1204,6 +1206,7 @@ local function AttachExtraButtons(wrapperFrame, extraButtonsData)
 					ImageColor3 = Theme.TextColor, Parent = extraBtn
 				})
 			end
+
 			ApplyHover(extraBtn, extraBtn, Theme.AccentColor, Theme.ButtonColor)
 			GlobalMaid:GiveTask(extraBtn.MouseButton1Click:Connect(function()
 				ApplyRipple(extraBtn)
@@ -1213,8 +1216,8 @@ local function AttachExtraButtons(wrapperFrame, extraButtonsData)
 		end
 	end
 end
-local ActiveWidgets = {}
 
+local ActiveWidgets = {}
 local function CreateQuickWidget(name, cType, callback, initialState)
 	if ActiveWidgets[name] then return ActiveWidgets[name] end
 
@@ -1300,7 +1303,7 @@ local function AddPinButton(parentFrame, name, cType, callback, initialState)
 	if not kailex.Setting.QuickWidgets then return end
 
 	local PinBtn = Create("ImageButton", {
-		Size = UDim2.fromOffset(22, 18),
+		Size = UDim2.fromOffset(22, 21),
 		Position = UDim2.fromScale(0.02, 0.2),
 		BackgroundTransparency = 1,
 		Image = "rbxassetid://6031082533",
