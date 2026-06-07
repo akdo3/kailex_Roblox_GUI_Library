@@ -2419,7 +2419,7 @@ local function BuildComponents(compTable, parent, prnt2)
 		local expanded = state or false
 
 		local sectionOuter = Create("Frame", {
-			Size = UDim2.new(Layout.ButtonSize.X.Scale, Layout.ButtonSize.X.Offset, 0, 0), 
+			Size = UDim2.new(Layout.ButtonSize.X.Scale,Layout.ButtonSize.X.Offset, 0, 0), 
 			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1, 
 			Parent = parent, 
@@ -2431,7 +2431,7 @@ local function BuildComponents(compTable, parent, prnt2)
 
 		local headerWrapper = Create("Frame", {
 			BackgroundTransparency = 1, 
-			Size = UDim2.new(1, 0, 0, Layout.ButtonSizeY), 
+			Size = UDim2.new(1, 0, 0, 30), 
 			Parent = sectionOuter, 
 			Create("UIListLayout", {
 				Padding = UDim.new(0, 8), 
@@ -2525,13 +2525,20 @@ local function BuildComponents(compTable, parent, prnt2)
 		})
 
 		local function UpdateVisuals()
+			if expanded then
+				contentWrapper.Visible = true
+			end
+
 			toggleIcon.Text = expanded and "-" or "+"
+
 			PlayTween(headerBase, SharedTweens.HoverIn, {
 				BackgroundColor3 = expanded and Theme.AccentColor or Theme.ButtonColor
 			})
 			PlayTween(contentWrapper, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
 				Size = UDim2.new(1, 0, 0, expanded and (iCUILL.AbsoluteContentSize.Y + 8) or 0)
-			})
+			}, function()
+				contentWrapper.Visible = expanded
+			end)
 		end
 
 		local function Toggle(force)
@@ -2550,11 +2557,31 @@ local function BuildComponents(compTable, parent, prnt2)
 			end 
 		end))
 
-		function api:Toggle(force) Toggle(force) end
-		function api:getState() return expanded end
-		function api:update(n, i) if n then btn.Text = n end; infoHandler:Update(i) end
-		function api:destroy() dsMaid:DoCleaning(); infoHandler:Destroy(); sectionOuter:Destroy() end
-		function api:Visible(s) sectionOuter.Visible = s ~= nil and s or not sectionOuter.Visible end
+		function api:Toggle(force)
+			Toggle(force)
+		end
+
+		function api:getState()
+			return expanded
+		end
+
+		function api:update(n, i)
+			if n then
+				btn.Text = n
+			end
+
+			infoHandler:Update(i)
+		end
+
+		function api:destroy()
+			dsMaid:DoCleaning()
+			infoHandler:Destroy()
+			sectionOuter:Destroy()
+		end
+
+		function api:Visible(s)
+			sectionOuter.Visible = s ~= nil and s or not sectionOuter.Visible
+		end
 
 		BuildComponents(api, innerContent, prnt2)
 		if expanded then 
