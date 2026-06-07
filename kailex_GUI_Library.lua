@@ -810,7 +810,7 @@ function kailex:ConfirmationFrame(text, onAccept)
 	return cFrame
 end
 
-local function GetAdaptiveSize(scaleX, scaleY)
+function GetAdaptiveSize(scaleX, scaleY)
 	local viewport = workspace.CurrentCamera.ViewportSize
 	local isMobile = viewport.X < 800
 	return UDim2.new(
@@ -819,7 +819,7 @@ local function GetAdaptiveSize(scaleX, scaleY)
 	)
 end
 
-local function CreateElementBase(parent, name, hasLabel)
+function CreateElementBase(parent, name)
 	local base = Create("Frame", {
 		Size = Layout.ButtonSize,
 		BackgroundColor3 = Theme.ButtonColor,
@@ -845,27 +845,24 @@ local function CreateElementBase(parent, name, hasLabel)
 		})
 	})
 
-	local label
-	if hasLabel then
-		label = Create("TextButton", {
-			Size = UDim2.fromScale(0.6, 1),
-			BackgroundTransparency = 1,
-			Text = name or "",
-			TextColor3 = Theme.TextColor,
-			TextScaled = true,
-			TextXAlignment = EnumAlignX,
-			AutoButtonColor = false,
-			Parent = base,
-			Create("UIFlexItem", {
-				FlexMode = Enum.UIFlexMode.Fill
-			})
+	local TxtBtn = Create("TextButton", {
+		Size = UDim2.fromScale(0.6, 1),
+		BackgroundTransparency = 1,
+		Text = name or "No Name",
+		TextColor3 = Theme.TextColor,
+		TextScaled = true,
+		TextXAlignment = EnumAlignX,
+		AutoButtonColor = false,
+		Parent = base,
+		Create("UIFlexItem", {
+			FlexMode = Enum.UIFlexMode.Fill
 		})
-	end
+	})
 
 	local elementMaid = Maid.new()
 	elementMaid:LinkToInstance(base)
 
-	return base, elementMaid, label
+	return base, elementMaid, TxtBtn
 end
 
 local ToolTipFrame = Create("Frame", {
@@ -1655,7 +1652,7 @@ UIClasses.Toggle.__index = UIClasses.Toggle
 
 function UIClasses.Toggle.new(parent, name, info, callback, defaultVal, style)
 	defaultVal = SaveManager:Get(name, defaultVal or false)
-	local baseFrame, _, btn = CreateElementBase(parent, name, UDim2.new(1, -60, 1, 0))
+	local baseFrame, _, btn = CreateElementBase(parent, name or "Toggle")
 
 	if kailex.Setting.QuickWidgets then 
 		btn.Position = UDim2.new(0.1, 0, 0, 0) 
@@ -1736,20 +1733,7 @@ UIClasses.Slider.__index = UIClasses.Slider
 
 function UIClasses.Slider.new(parent, name, info, beginVal, minVal, maxVal, callback, tSize, trackSize)
 	local currentVal = SaveManager:Get(name, beginVal)
-	local baseFrame, elementMaid = CreateElementBase(parent)
-
-	local label = Create("TextLabel", {
-		Size = UDim2.fromScale(tSize or 0.38, 1), 
-		BackgroundTransparency = 1, 
-		Text = name or "Slider",
-		TextColor3 = Theme.TextColor, 
-		TextScaled = true, 
-		TextXAlignment = EnumAlignX,
-		Parent = baseFrame, 
-		Create("UIFlexItem", {
-			FlexMode = Enum.UIFlexMode.Fill
-		})
-	})
+	local baseFrame, elementMaid, label = CreateElementBase(parent, name or "Slider")
 
 	local textBox = Create("TextBox", {
 		Size = UDim2.fromScale(0.1, 0.8), 
@@ -1967,21 +1951,8 @@ UIClasses.Dropdown.__index = UIClasses.Dropdown
 
 function UIClasses.Dropdown.new(parent, prnt2, name, info, items, perRow, callback, defaultVal, dSize, dPos)
 	local selected = SaveManager:Get(name, defaultVal)
-	local baseFrame, dropdownMaid = CreateElementBase(parent)
-
-	local btn = Create("TextButton", {
-		BackgroundTransparency = 1, 
-		Size = dSize or TextSize.WithIcon, 
-		Position = Layout.ButtonPOS, 
-		Text = selected and (name .. ": " .. tostring(selected)) or (name or "Dropdown"), 
-		TextColor3 = Theme.TextColor, 
-		TextScaled = true, 
-		TextXAlignment = EnumAlignX,
-		Create("UIFlexItem", {
-			FlexMode = Enum.UIFlexMode.Fill
-		}), 
-		Parent = baseFrame
-	})
+	local name =  selected and (name .. ": " .. tostring(selected)) or (name or "Dropdown")
+	local baseFrame, dropdownMaid, btn = CreateElementBase(parent, name)
 
 	local iconBtn = Create("ImageButton", {
 		BackgroundTransparency = 1, 
@@ -2227,21 +2198,7 @@ local function BuildComponents(compTable, parent, prnt2)
 			return arr
 		end
 
-		local baseFrame, dropdownMaid = CreateElementBase(parent)
-
-		local btn = Create("TextButton", {
-			BackgroundTransparency = 1, 
-			Size = TextSize.WithIcon, 
-			Position = Layout.ButtonPOS, 
-			Text = name or "Multi Dropdown", 
-			TextColor3 = Theme.TextColor, 
-			TextScaled = true, 
-			TextXAlignment = EnumAlignX, 
-			Create("UIFlexItem", {
-				FlexMode = Enum.UIFlexMode.Fill
-			}), 
-			Parent = baseFrame
-		})
+		local baseFrame, dropdownMaid, btn = CreateElementBase(parent, name or "Multi Dropdown")
 
 		local iconBtn = Create("ImageButton", {
 			BackgroundTransparency = 1, 
@@ -2613,18 +2570,7 @@ local function BuildComponents(compTable, parent, prnt2)
 			})
 		})
 
-		local baseFrame = CreateElementBase(parent)
-
-		local btn = Create("TextButton", {
-			BackgroundTransparency = 1, 
-			Position = Layout.ButtonPOS, 
-			Size = TextSize.WithIcon, 
-			Text = name or "Frame Button", 
-			TextColor3 = Theme.TextColor, 
-			TextScaled = true, 
-			TextXAlignment = EnumAlignX, 
-			Parent = baseFrame
-		})
+		local baseFrame, FBMaid, btn = CreateElementBase(parent, name or "Frame Button")
 
 		Create("TextLabel", {
 			BackgroundTransparency = 1, 
@@ -2637,10 +2583,8 @@ local function BuildComponents(compTable, parent, prnt2)
 		})
 
 		local infoHandler = HandleInfo(baseFrame, Info)
-		local fbMaid = Maid.new()
-		fbMaid:LinkToInstance(baseFrame)
 
-		fbMaid:GiveTask(btn.MouseButton1Click:Connect(function() 
+		FBMaid:GiveTask(btn.MouseButton1Click:Connect(function() 
 			ApplyRipple(btn)
 			PlayInteractSound() 
 
@@ -2648,19 +2592,9 @@ local function BuildComponents(compTable, parent, prnt2)
 			contentFrame.Visible = true
 		end))
 
-		local backBase = CreateElementBase(contentFrame)
-		local backBtn = Create("TextButton", {
-			BackgroundTransparency = 1, 
-			Position = Layout.ButtonPOS, 
-			Size = TextSize.Full, 
-			Text = "← Back", 
-			TextColor3 = Theme.TextColor, 
-			TextScaled = true, 
-			TextXAlignment = EnumAlignX, 
-			Parent = backBase
-		})
+		local backBase, _, backBtn = CreateElementBase(contentFrame, "← Back")
 
-		fbMaid:GiveTask(backBtn.MouseButton1Click:Connect(function() 
+		FBMaid:GiveTask(backBtn.MouseButton1Click:Connect(function() 
 			ApplyRipple(backBtn)
 			PlayInteractSound() 
 
@@ -2682,7 +2616,7 @@ local function BuildComponents(compTable, parent, prnt2)
 		end
 
 		function api:destroy() 
-			fbMaid:DoCleaning()
+			FBMaid:DoCleaning()
 			infoHandler:Destroy()
 			contentFrame:Destroy()
 			baseFrame:Destroy() 
