@@ -2630,7 +2630,44 @@ local function BuildComponents(compTable, parent, prnt2)
 		local info, placeholder, callback, defaultVal, live = getArgs(...)
 		local api = {}
 		local cb = callback or function() end
-		local baseFrame, TBMaid, _ = CreateElementBase(parent, name or "Text Box")
+
+		local baseFrame = Create("Frame", {
+			Size = Layout.ButtonSize,
+			BackgroundColor3 = Theme.ButtonColor,
+			BackgroundTransparency = Theme.Transparency + 0.2,
+			Parent = parent,
+			Create("UICorner", {
+				CornerRadius = Layout.ElementCorner
+			}),
+			Create("UIStroke", {
+				Thickness = 1.2,
+				Color = Theme.BorderColor,
+				Transparency = 0.6
+			}),
+			Create("UIPadding", {
+				PaddingLeft = UDim.new(0, 8),
+				PaddingRight = UDim.new(0, 8)
+			}),
+			Create("UIListLayout", {
+				Padding = UDim.new(0, 8),
+				FillDirection = EnumFill,
+				VerticalAlignment = EnumAlignY,
+				SortOrder = EnumSort,
+			})
+		})
+
+		local Label = Create("TextLabel", {
+			Size = UDim2.fromScale(0.6, 1),
+			BackgroundTransparency = 1,
+			Text = name or "Text Box",
+			TextColor3 = Theme.TextColor,
+			TextScaled = true,
+			TextXAlignment = EnumAlignX,
+			Parent = baseFrame,
+			Create("UIFlexItem", {
+				FlexMode = Enum.UIFlexMode.Fill
+			})
+		})
 
 		local textBox = Create("TextBox", {
 			BackgroundColor3 = Theme.AccentColor, 
@@ -2648,10 +2685,15 @@ local function BuildComponents(compTable, parent, prnt2)
 			Create("UICorner", {
 				CornerRadius = UDim.new(0.15, 0)
 			}), 
-			GetStroke(0, Enum.ApplyStrokeMode.Border)
+			GetStroke(0, Enum.ApplyStrokeMode.Border),
+			Create("UIFlexItem", {
+				FlexMode = Enum.UIFlexMode.Fill
+			})
 		})
 
 		local infoHandler = HandleInfo(baseFrame, info)
+		local TBMaid = Maid.new()
+		TBMaid:LinkToInstance(baseFrame)
 		local isProg = false
 
 		if live then 
