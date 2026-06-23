@@ -41,70 +41,79 @@ Maid.__index = Maid
 function Maid.new()
 	return setmetatable({
 		_tasks = {},
+		_count = 0,
 		_isCleaned = false
 	}, Maid)
 end
 
-local function SafeClean(cleaner, task)
-	pcall(function() cleaner(task) end)
-end
-
 local function CleanTask(task)
-	local taskType = typeof(task)
-
-	if taskType == "function" then
+	local t = typeof(task)
+	if t == "function" then
 		pcall(task)
-	elseif taskType == "RBXScriptConnection" then
+	elseif t == "RBXScriptConnection" then
 		task:Disconnect()
-	elseif taskType == "Instance" then
-		SafeClean(game.Destroy, task)
-	elseif taskType == "table" or taskType == "userdata" then
-		local cleanerMethod = task.Destroy or task.Disconnect or task.DoCleaning or task.Remove or task.Stop or task.Close
-		if type(cleanerMethod) == "function" then
-			SafeClean(cleanerMethod, task)
-		end
+	elseif t == "Instance" then
+		pcall(game.Destroy, task)
+	elseif t == "table" or t == "userdata" then
+		local m = task.Destroy or task.Disconnect or task.DoCleaning or task.Remove or task.Stop or task.Close
+		if type(m) == "function" then pcall(m, task) end
 	end
 end
 
 function Maid:__newindex(key, task)
-	if Maid[key] then
+	if Maid[key] ~= nil then
 		rawset(self, key, task)
 		return
 	end
 
-	local oldTask = self._tasks[key]
-	self._tasks[key] = task
-
-	if oldTask then
-		CleanTask(oldTask)
+	if self._isCleaned then
+		CleanTask(task)
+		return
 	end
+
+	local old = self._tasks[key]
+	if old then
+		CleanTask(old)
+	end
+
+	self._tasks[key] = task
 end
 
 function Maid:GiveTask(task)
-	if not task or self._isCleaned then return task end
-	table.insert(self._tasks, task)
-	return task
+	if not task or self._isCleaned then return nil end
+
+	self._count += 1
+	self._tasks[self._count] = task
+	return self._count
+end
+
+function Maid:RemoveTask(id)
+	if not id then return end
+
+	local task = self._tasks[id]
+	if task then
+		CleanTask(task)
+		self._tasks[id] = nil
+	end
 end
 
 function Maid:LinkToInstance(instance)
 	if typeof(instance) ~= "Instance" then return end
-	self:GiveTask(instance.Destroying:Connect(function()
-		self:DoCleaning()
-	end))
+
+	self._tasks["__dtor"] = instance.Destroying:Connect(function() self:Destroy() end)
 	return self
 end
 
 function Maid:DoCleaning()
 	if self._isCleaned then return end
-	self._isCleaned = true
 
+	self._isCleaned = true
 	local tasks = self._tasks
-	for key, task in pairs(tasks) do
-		CleanTask(task)
-		tasks[key] = nil
+	for k, v in pairs(tasks) do
+		CleanTask(v)
+		tasks[k] = nil
 	end
-	table.clear(self._tasks)
-	self._isCleaned = false
+	self._count = 0
 end
 
 function Maid:Destroy()
@@ -151,19 +160,27 @@ local function Create(class, props)
 	local inst = Instance.new(class)
 	inst.Name = GenerateRandomName()
 
+	local children, parent = {}, nil
+
 	for k, v in next, props do
 		if type(k) == "number" then
-			v.Parent = inst
 			if v.Name == class then v.Name = GenerateRandomName() end
+			table.insert(children, v)
+		elseif k == "Parent" then
+			parent = v
 		else
 			inst[k] = v
 		end
 	end
 
-	local prnt = props.Parent
-	props.Parent = nil
+	for _, child in ipairs(children) do
+		child.Parent = inst
+	end
 
-	if prnt then inst.Parent = prnt end
+	if parent then
+		inst.Parent = parent
+	end
+
 	return inst
 end
 
@@ -924,57 +941,6 @@ local function HandleInfo(parentFrame, info)
 	return api
 end
 
-function CreateElementBase(parent, name, Info)
-	local base = Create("Frame", {
-		Size = Layout.ButtonSize,
-		BackgroundColor3 = Theme.ButtonColor,
-		BackgroundTransparency = Theme.Transparency + 0.2,
-		Parent = parent,
-		Create("UICorner", {
-			CornerRadius = Layout.ElementCorner
-		}),
-		Create("UIStroke", {
-			Thickness = 1.2,
-			Color = Theme.BorderColor,
-			Transparency = 0.6
-		}),
-		Create("UIPadding", {
-			PaddingLeft = UDim.new(0, 8),
-			PaddingRight = UDim.new(0, 8)
-		}),
-		Create("UIListLayout", {
-			Padding = UDim.new(0, 8),
-			FillDirection = EnumFill,
-			VerticalAlignment = EnumAlignY,
-			SortOrder = EnumSort,
-		})
-	})
-
-	local TxtBtn = Create("TextButton", {
-		Size = UDim2.fromScale(0.6, 1),
-		BackgroundTransparency = 1,
-		Text = name or "No Name",
-		TextColor3 = Theme.TextColor,
-		TextScaled = true,
-		TextXAlignment = EnumAlignX,
-		AutoButtonColor = false,
-		Parent = base,
-		Create("UIFlexItem", {
-			FlexMode = Enum.UIFlexMode.Fill
-		})
-	})
-
-	local InfoHandel
-	if Info then
-		InfoHandel = HandleInfo(base, Info)
-	end
-
-	local elementMaid = Maid.new()
-	elementMaid:LinkToInstance(base)
-
-	return base, elementMaid, TxtBtn, InfoHandel
-end
-
 local NotificationFrame = Create("Frame", {
 	Size = UDim2.fromScale(0.15, 1), 
 	Position = UDim2.fromScale(0.84, 0), 
@@ -1518,6 +1484,55 @@ end
 
 local UIClasses = {}
 
+-- Template cache for base frame decorators
+local BaseTemplate = {
+	{"UICorner", {CornerRadius = Layout.ElementCorner}},
+	{"UIStroke", {Thickness = 1.2, Color = Theme.BorderColor, Transparency = 0.6}},
+	{"UIPadding", {PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8)}},
+	{"UIListLayout", {Padding = UDim.new(0, 8), FillDirection = EnumFill, VerticalAlignment = EnumAlignY, SortOrder = EnumSort}}
+}
+
+function CreateElementBase(parent, name, Info, overrides)
+	local base = Create("Frame", {
+		Size = Layout.ButtonSize,
+		BackgroundColor3 = Theme.ButtonColor,
+		BackgroundTransparency = Theme.Transparency + 0.2,
+		Parent = parent
+	})
+
+	for _, tpl in ipairs(BaseTemplate) do
+		Create(tpl[1], tpl[2]).Parent = base
+	end
+
+	if overrides then
+		for k, v in pairs(overrides) do base[k] = v end
+	end
+
+	local TxtBtn = Create("TextButton", {
+		Size = UDim2.fromScale(0.6, 1),
+		BackgroundTransparency = 1,
+		Text = name or "No Name",
+		TextColor3 = Theme.TextColor,
+		TextScaled = true,
+		TextXAlignment = EnumAlignX,
+		AutoButtonColor = false,
+		Parent = base,
+		Create("UIFlexItem", {FlexMode = Enum.UIFlexMode.Fill})
+	})
+
+	local InfoHandler = Info and HandleInfo(base, Info) or nil
+	local elementMaid = Maid.new()
+	elementMaid:LinkToInstance(base)
+
+	-- Auto-cleanup on instance destruction
+	base.Destroying:Connect(function()
+		elementMaid:Destroy()
+		if InfoHandler then InfoHandler:Destroy() end
+	end)
+
+	return base, elementMaid, TxtBtn, InfoHandler
+end
+
 UIClasses.Base = {}
 UIClasses.Base.__index = UIClasses.Base
 
@@ -1531,14 +1546,21 @@ end
 
 function UIClasses.Base:Visible(state)
 	if not self.BaseFrame then return end
-	self.BaseFrame.Visible = state ~= nil and state or not self.BaseFrame.Visible
+	if state == nil then
+		self.BaseFrame.Visible = not self.BaseFrame.Visible
+	else
+		self.BaseFrame.Visible = state
+	end
 end
 
-function UIClasses.Base:destroy()
-	if self.InfoHandler then self.InfoHandler:Destroy() end
-	if self.Maid then self.Maid:DoCleaning() end
-	if self.BaseFrame then self.BaseFrame:Destroy() end
+function UIClasses.Base:Destroy()
+	if self._destroyed then return end
+	self._destroyed = true
+	if self.InfoHandler then self.InfoHandler:Destroy(); self.InfoHandler = nil end
+	if self.Maid then self.Maid:Destroy(); self.Maid = nil end
+	if self.BaseFrame then self.BaseFrame:Destroy(); self.BaseFrame = nil end
 end
+UIClasses.Base.destroy = UIClasses.Base.Destroy
 
 UIClasses.Button = setmetatable({}, UIClasses.Base)
 UIClasses.Button.__index = UIClasses.Button
@@ -3927,19 +3949,22 @@ function kailex:createFrame(title, buttontxt)
 	local CreateFrameBtn, CreateRow
 
 	local SearchCache = {}
+	local SearchThread = nil
+
 	local function BuildCache(prnt, cacheList)
-		for _, child in pairs(prnt:GetChildren()) do
-			if child:IsA("Frame") and not child:IsA("ScrollingFrame") then
-				if child:GetAttribute("IsRow") then
-					BuildCache(child, cacheList)
-				else
-					local isSep = child:GetAttribute("IsSeparator") == true
-					local txtObj = child:FindFirstChildWhichIsA("TextLabel", true) or child:FindFirstChildWhichIsA("TextButton", true)
-					if isSep then
-						table.insert(cacheList, {element = child, isSep = true, origSize = child.Size})
-					elseif txtObj and txtObj.Text ~= "" then
-						table.insert(cacheList, {element = child, text = txtObj.Text:lower(), origSize = child.Size})
-					end
+		for _, child in ipairs(prnt:GetChildren()) do
+			if not child:IsA("GuiObject") or child:IsA("UIListLayout") or child:IsA("UIPadding") then continue end
+			if child:IsA("ScrollingFrame") then continue end
+
+			if child:GetAttribute("IsRow") then
+				BuildCache(child, cacheList)
+			else
+				local isSep = child:GetAttribute("IsSeparator") == true
+				local txtObj = child:FindFirstChildWhichIsA("TextLabel", true) or child:FindFirstChildWhichIsA("TextButton", true)
+				if isSep then
+					cacheList[#cacheList+1] = {element = child, isSep = true}
+				elseif txtObj and txtObj.Text ~= "" then
+					cacheList[#cacheList+1] = {element = child, text = txtObj.Text:lower()}
 				end
 			end
 		end
@@ -3947,43 +3972,34 @@ function kailex:createFrame(title, buttontxt)
 
 	local function UpdateSearchCache()
 		if not currentTab then return end
-		SearchCache[currentTab] = {}
-		BuildCache(currentTab, SearchCache[currentTab])
+		local cache = {}
+		BuildCache(currentTab, cache)
+		SearchCache[currentTab] = cache
 	end
 
-	local SearchThread = nil
-
 	local function ApplySearchFilter()
-		local query = string.lower(SearchInputFrame.Text)
+		local query = SearchInputFrame.Text:lower()
 		if not currentTab then return end
 
-		local cache = SearchCache[currentTab] or {}
-		if #cache == 0 then 
-			UpdateSearchCache() 
-			cache = SearchCache[currentTab] 
+		local cache = SearchCache[currentTab]
+		if not cache or #cache == 0 then 
+			UpdateSearchCache()
+			cache = SearchCache[currentTab] or {}
 		end
 
 		if SearchThread then
 			task.cancel(SearchThread)
+			SearchThread = nil
 		end
 
 		SearchThread = task.delay(0.08, function()
+			local emptyQuery = query == ""
 			for _, data in ipairs(cache) do
-				if data.isSep then 
-					local targetVisibility = (query == "")
-
-					if data.element.Visible ~= targetVisibility then
-						data.element.Visible = targetVisibility
-					end
-				else
-					local targetVisibility = (query == "" or string.find(data.text, query, 1, true) ~= nil)
-
-					if data.element.Visible ~= targetVisibility then
-						data.element.Visible = targetVisibility
-					end
+				local target = emptyQuery or (not data.isSep and string.find(data.text, query, 1, true) ~= nil)
+				if data.element.Visible ~= target then
+					data.element.Visible = target
 				end
 			end
-
 			SearchThread = nil
 		end)
 	end
